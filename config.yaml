@@ -1,0 +1,73 @@
+# AI News Curator - Konfiguration
+
+# Schulungs-Kontext
+teaching_context:
+  topics:
+    - "Software-Entwicklung mit KI"
+    - "Integration von KI in Produkte"
+  target_audience: "IT-Studierende und Young Professionals"
+  tech_stack:
+    - "Python"
+    - "Java"
+    - "React"
+    - "Windsurf"
+    - "VS Code"
+    - "Claude Code"
+    - "Augment Code"
+  focus: "Praktische Tools und Anwendungen"
+
+# News Quellen
+sources:
+  blogs:
+    - name: "Anthropic Blog"
+      url: "https://www.anthropic.com/news"
+      priority: "high"
+    - name: "OpenAI Blog"
+      url: "https://openai.com/blog"
+      priority: "high"
+    - name: "Google AI Blog"
+      url: "https://blog.google/technology/ai/"
+      priority: "medium"
+  
+  aggregators:
+    - name: "Hacker News"
+      keywords: ["AI", "LLM", "Claude", "GPT", "Cursor", "Windsurf"]
+      min_score: 50
+    - name: "Reddit"
+      subreddits: ["LocalLLaMA", "ClaudeAI", "OpenAI", "ChatGPT"]
+  
+  github:
+    topics: ["ai", "llm", "claude", "cursor", "coding-assistant"]
+    min_stars: 100
+
+# Filter-Kriterien
+relevance_criteria:
+  high_priority:  # Score 4-5
+    - "Neue Development Tools"
+    - "API Updates (Claude, OpenAI, etc.)"
+    - "Praktische Integration Patterns"
+    - "Performance Improvements"
+    - "Neue Coding Assistant Features"
+  
+  medium_priority:  # Score 3
+    - "Research Papers mit praktischer Relevanz"
+    - "Industry Trends"
+    - "Best Practices"
+  
+  low_priority:  # Score 1-2
+    - "Reine Marketing-Ankündigungen"
+    - "Spekulationen ohne Substanz"
+    - "Duplicate Content"
+
+# Output-Einstellungen
+output:
+  format: "markdown"
+  save_path: "./reports"
+  filename_pattern: "ai_news_digest_{date}.md"
+  include_summary_stats: true
+  
+# Scheduling
+schedule:
+  frequency: "daily"
+  time: "08:00"  # Schweizer Zeit (CET/CEST)
+  hours_back: 24
