@@ -6,12 +6,18 @@ Speziell für Software-Entwicklung mit KI und KI-Integration in Produkte
 
 import os
 import json
+import re
+import time
 import anthropic
 from datetime import datetime, timedelta
-from typing import List, Dict
+from typing import List, Dict, Optional
 import feedparser
 import requests
 from dataclasses import dataclass, asdict
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 @dataclass
 class NewsItem:
@@ -33,6 +39,27 @@ class AINewsCurator:
             'google_ai': 'https://blog.google/technology/ai/rss',
             'hacker_news_ai': 'https://hnrss.org/newest?q=AI+OR+LLM+OR+Claude+OR+GPT',
         }
+
+    def extract_json_from_text(self, text: str) -> Optional[Dict]:
+        """Extrahiert JSON aus Text, auch wenn Claude Text drum herum schreibt"""
+        # Versuche zuerst direktes JSON parsing
+        try:
+            return json.loads(text)
+        except json.JSONDecodeError:
+            pass
+
+        # Suche nach JSON-Block im Text (zwischen geschweiften Klammern)
+        json_pattern = r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}'
+        matches = re.finditer(json_pattern, text, re.DOTALL)
+
+        for match in matches:
+            try:
+                potential_json = match.group(0)
+                return json.loads(potential_json)
+            except json.JSONDecodeError:
+                continue
+
+        return None
     
     def fetch_news(self, hours_back: int = 24) -> List[Dict]:
         """Sammelt News von verschiedenen Quellen"""
@@ -99,73 +126,105 @@ class AINewsCurator:
     
     def analyze_relevance(self, news_items: List[Dict]) -> List[NewsItem]:
         """Nutzt Claude API um Relevanz zu bewerten"""
-        
-        # Batch-Processing für Effizienz
-        filtered_items = []
-        
-        for item in news_items:
-            prompt = f"""Analysiere diese AI/Tech-News auf Relevanz für Schweizer Hochschul-Schulungen.
 
-Kontext:
+        filtered_items = []
+        success_count = 0
+        error_count = 0
+
+        for idx, item in enumerate(news_items, 1):
+            # Rate limiting: Kleine Pause zwischen Requests
+            if idx > 1:
+                time.sleep(0.3)  # 300ms zwischen Requests
+
+            prompt = f"""Du bist ein Experte für AI/ML-Technologien und Hochschul-Bildung.
+
+Analysiere diese News auf Relevanz für Schweizer Hochschul-Schulungen:
+
+KONTEXT:
 - Schulungen: "Software-Entwicklung mit KI" und "Integration von KI in Produkte"
 - Zielgruppe: IT-Studierende und Young Professionals
 - Tech-Stack: Python, Java, React, Windsurf, VS Code, Claude Code, Augment Code
 - Fokus: Praktische Tools und Anwendungen, nicht nur Theorie
 
-News-Item:
+NEWS-ITEM:
 Titel: {item['title']}
 Quelle: {item['source']}
-URL: {item['url']}
-Zusammenfassung: {item['summary']}
+Zusammenfassung: {item['summary'][:300]}
 
-Bewerte nach folgenden Kriterien:
+AUFGABE:
+Bewerte die Relevanz für die Schulungen:
 
-1. RELEVANZ-SCORE (1-5):
-   5 = Muss sofort in Schulung eingebaut werden
-   4 = Sehr relevant, baldige Integration sinnvoll
-   3 = Interessant, beobachten
-   2 = Wenig relevant
-   1 = Nicht relevant
+RELEVANZ-SCORE (1-5):
+5 = Muss sofort in Schulung eingebaut werden
+4 = Sehr relevant, baldige Integration sinnvoll
+3 = Interessant, beobachten
+2 = Wenig relevant
+1 = Nicht relevant
 
-2. KATEGORIE:
-   - "teaching" = Direkt für Unterricht nutzbar
-   - "tools" = Tool-Update/neue Entwicklungsumgebung
-   - "research" = Interessante Entwicklung, aber nicht unmittelbar praktisch
-   - "skip" = Nicht relevant
+KATEGORIE:
+- "teaching" = Direkt für Unterricht nutzbar
+- "tools" = Tool-Update/neue Entwicklungsumgebung
+- "research" = Interessante Entwicklung, nicht unmittelbar praktisch
+- "skip" = Nicht relevant
 
-3. REASONING: Kurze Begründung (1-2 Sätze)
+WICHTIG: Antworte AUSSCHLIESSLICH mit gültigem JSON. Kein Text davor oder danach.
 
-Antworte NUR mit JSON:
-{{
-  "relevance_score": <1-5>,
-  "category": "<teaching|tools|research|skip>",
-  "reasoning": "<begründung>"
-}}"""
+Format:
+{{"relevance_score": 3, "category": "tools", "reasoning": "Deine Begründung hier"}}"""
 
             try:
                 response = self.client.messages.create(
                     model="claude-sonnet-4-20250514",
-                    max_tokens=300,
+                    max_tokens=400,
                     messages=[{"role": "user", "content": prompt}]
                 )
-                
-                analysis = json.loads(response.content[0].text)
-                
+
+                # Verbesserte JSON-Extraktion
+                response_text = response.content[0].text.strip()
+                analysis = self.extract_json_from_text(response_text)
+
+                if not analysis:
+                    raise ValueError(f"Konnte kein JSON in Response finden: {response_text[:100]}")
+
+                # Validierung der erforderlichen Felder
+                if 'relevance_score' not in analysis or 'category' not in analysis:
+                    raise ValueError(f"JSON fehlt erforderliche Felder: {analysis}")
+
+                # Fallback für fehlendes reasoning
+                reasoning = analysis.get('reasoning', 'Keine Begründung verfügbar')
+
                 filtered_items.append(NewsItem(
                     title=item['title'],
                     url=item['url'],
                     source=item['source'],
                     published=item['published'],
                     summary=item['summary'][:200],
-                    relevance_score=analysis['relevance_score'],
+                    relevance_score=int(analysis['relevance_score']),
                     category=analysis['category'],
-                    reasoning=analysis['reasoning']
+                    reasoning=reasoning
                 ))
-                
+                success_count += 1
+
             except Exception as e:
-                print(f"Error analyzing {item['title']}: {e}")
-                continue
-        
+                error_count += 1
+                # Detaillierteres Error-Logging für Debugging
+                if error_count <= 3:  # Zeige nur erste 3 Fehler im Detail
+                    print(f"⚠️  Error analyzing '{item['title'][:50]}...': {e}")
+
+                # Fallback: Füge Item mit niedrigem Score hinzu statt es zu verlieren
+                filtered_items.append(NewsItem(
+                    title=item['title'],
+                    url=item['url'],
+                    source=item['source'],
+                    published=item['published'],
+                    summary=item['summary'][:200],
+                    relevance_score=1,  # Niedrigster Score
+                    category='skip',
+                    reasoning=f'Automatische Analyse fehlgeschlagen: {str(e)[:100]}'
+                ))
+
+        print(f"📊 Analyse-Statistik: {success_count} erfolgreich, {error_count} Fehler")
+
         # Sortiere nach Relevanz
         return sorted(filtered_items, key=lambda x: x.relevance_score, reverse=True)
     

@@ -11,3 +11,6 @@ requests>=2.31.0
 
 # Configuration
 pyyaml>=6.0.1
+
+# Environment Variables (.env support)
+python-dotenv>=1.0.0
