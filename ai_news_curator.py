@@ -17,7 +17,8 @@ from dataclasses import dataclass, asdict
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
-load_dotenv()
+# override=True ensures .env takes precedence over shell variables
+load_dotenv(override=True)
 
 @dataclass
 class NewsItem:
