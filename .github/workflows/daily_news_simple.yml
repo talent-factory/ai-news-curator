@@ -1,0 +1,47 @@
+name: Daily AI News Digest (Simple)
+
+# Diese vereinfachte Version erstellt nur Reports, keine GitHub Issues
+# Ideal für den Anfang!
+
+on:
+  schedule:
+    # Täglich um 07:00 UTC (08:00 CET/09:00 CEST)
+    - cron: '0 7 * * *'
+  workflow_dispatch:  # Manuelles Triggern möglich
+
+permissions:
+  contents: write
+
+jobs:
+  curate-news:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      
+      - name: Install Dependencies
+        run: |
+          pip install -r requirements.txt
+      
+      - name: Run AI News Curator
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          python ai_news_curator.py
+      
+      - name: Commit and Push Report
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add ai_news_digest_*.md
+          git diff --quiet && git diff --staged --quiet || {
+            git commit -m "📰 Daily AI News Digest $(date +'%Y-%m-%d')"
+            git push
+          }

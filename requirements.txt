@@ -1,0 +1,13 @@
+# AI News Curator - Python Dependencies
+
+# Claude API Integration
+anthropic>=0.40.0
+
+# News Feed Parsing
+feedparser>=6.0.10
+
+# HTTP Requests
+requests>=2.31.0
+
+# Configuration
+pyyaml>=6.0.1

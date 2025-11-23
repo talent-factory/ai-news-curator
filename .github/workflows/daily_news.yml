@@ -1,0 +1,69 @@
+name: Daily AI News Digest
+
+on:
+  schedule:
+    # Täglich um 07:00 UTC (08:00 CET/09:00 CEST)
+    - cron: '0 7 * * *'
+  workflow_dispatch:  # Manuelles Triggern möglich
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  curate-news:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      
+      - name: Install Dependencies
+        run: |
+          pip install -r requirements.txt
+      
+      - name: Run AI News Curator
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          python ai_news_curator.py
+      
+      - name: Commit and Push Report
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add ai_news_digest_*.md
+          if ! git diff --quiet && git diff --staged --quiet; then
+            git commit -m "📰 Daily AI News Digest $(date +'%Y-%m-%d')"
+            git push
+          fi
+      
+      - name: Create Issue on High Priority Items
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const today = new Date().toISOString().split('T')[0].replace(/-/g, '');
+            const filename = `ai_news_digest_${today}.md`;
+            
+            if (fs.existsSync(filename)) {
+              const content = fs.readFileSync(filename, 'utf8');
+              
+              // Check if there are high priority items
+              if (content.includes('## 🔥 Sofort relevant')) {
+                await github.rest.issues.create({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  title: `🎯 Hochpriore AI News - ${new Date().toISOString().split('T')[0]}`,
+                  body: content,
+                  labels: ['ai-news', 'high-priority']
+                });
+              }
+            }

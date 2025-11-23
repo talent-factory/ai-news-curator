@@ -1,17 +1,92 @@
 # 🎯 AI News Curator für Teaching
 
-Intelligenter News-Filter speziell für **Software-Entwicklung mit KI** und **KI-Integration in Produkte** Schulungen.
+> Intelligenter News-Filter speziell für **Software-Entwicklung mit KI** und **KI-Integration in Produkte** Schulungen.
+
+## 🎓 Das Problem
+
+Als Dozent für KI-Schulungen stehst du vor einer riesigen Herausforderung:
+
+- 📰 Täglich erscheinen dutzende AI/ML News auf Hacker News, Reddit, GitHub
+- ⚡ Die Entwicklung ist rasant: Neue Tools, API-Updates, Breaking Changes
+- 🎯 Nur ein Bruchteil ist für deine Studierenden relevant
+- ⏰ Keine Zeit, alles manuell zu sichten und zu bewerten
+- 🔍 Schwierig zu unterscheiden: Marketing-Hype vs. echte Innovation
+
+**Die Folge:** Du verpasst wichtige Updates oder verbringst Stunden mit News-Screening.
+
+## 💡 Die Lösung
+
+Ein intelligenter AI News Curator, der:
+
+✅ **Automatisch** relevante News sammelt (Hacker News, Reddit, GitHub, Tech-Blogs)
+✅ **Mit Claude API** die Relevanz für deine Schulungen bewertet
+✅ **Priorisiert** nach Teaching-Relevanz (Score 1-5)
+✅ **Kategorisiert** (Teaching, Tools, Research)
+✅ **Tägliche Reports** generiert mit direkten Links und Kontext
+✅ **Optional automatisiert** läuft via GitHub Actions
 
 ## 🌟 Features
 
-- ✅ **Automatische News-Sammlung** von 10+ relevanten Quellen
-- 🤖 **Claude-powered Relevanz-Analyse** mit kontextuellem Verständnis
-- 📊 **Intelligente Kategorisierung** (Teaching, Tools, Research)
-- 🔥 **Prioritäts-Scoring** (1-5) basierend auf Unterrichtsrelevanz
-- 📝 **Markdown Reports** für einfaches Sharing
-- ⚡ **GitHub Actions Integration** für tägliche Auto-Runs
+### 🤖 Intelligente Claude-Integration
+- **Kontext-bewusstes Filtern:** Claude kennt deinen Tech-Stack (Windsurf, Claude Code, VS Code, etc.)
+- **Teaching-Fokus:** Bewertet nicht "cool", sondern "unterrichtsrelevant"
+- **Reasoning:** Erklärt, WARUM eine News wichtig ist
+- **Praxis-orientiert:** Score 5 = "Sofort in Schulung einbauen"
+
+### 📰 News-Quellen
+- Hacker News (AI/LLM/Claude/GPT/Cursor/Windsurf Keywords)
+- Reddit (r/LocalLLaMA, r/ClaudeAI, r/OpenAI, etc.)
+- GitHub Trending (AI/ML Repos mit Filter)
+- Erweiterbar um eigene RSS-Feeds
+
+### 📊 Output
+- **Markdown Reports** mit direkten Links
+- **Priorisierte Struktur:** High-Priority → Medium → Low
+- **Kategorien:** Teaching, Tools, Research
+- **GitHub Issues** (optional) für High-Priority Items
+- **Automatisierbar** via GitHub Actions oder Cron
+
+## 🔄 Wie es funktioniert
+
+```
+1. News Sammeln
+   ├─ Hacker News (Top AI-Topics)
+   ├─ Reddit (r/LocalLLaMA, r/ClaudeAI, etc.)
+   ├─ GitHub Trending (AI/ML Repos)
+   └─ [Optional: Eigene RSS-Feeds]
+
+2. Claude Analyse (pro News-Item)
+   ├─ Kontext: Deine Schulungsthemen
+   ├─ Bewertung: Relevanz-Score 1-5
+   ├─ Kategorisierung: Teaching/Tools/Research
+   └─ Reasoning: Warum relevant/nicht relevant
+
+3. Report Generierung
+   ├─ Sortiert nach Priorität
+   ├─ Markdown-Format
+   └─ Mit direkten Links & Kontext
+
+4. [Optional] Automatisierung
+   ├─ GitHub Actions: Täglich um 08:00
+   ├─ Auto-Commit des Reports
+   └─ GitHub Issues für High-Priority
+```
+
+**Beispiel einer Claude-Analyse:**
+```
+Input: "Google Antigravity: Neue agentic IDE mit Gemini 3"
+
+Claude analysiert:
+- Relevanz: 5/5 (Direkter Konkurrent zu Windsurf/Cursor)
+- Kategorie: tools
+- Reasoning: "Studierende sollten Vergleich kennen. Agent-first
+  Ansatz zeigt zukünftige Entwicklung."
+```
 
 ## 🚀 Quick Start
+
+📖 **Neu hier?** Lies zuerst die [5-Minuten Quick-Start Anleitung](QUICK_START.md)
+🤖 **Claude API Details?** Siehe [Claude Integration Dokumentation](CLAUDE.md)
 
 ### 1. Repository Setup
 
@@ -44,6 +119,27 @@ python ai_news_curator.py
 ```
 
 Output: `ai_news_digest_YYYYMMDD.md`
+
+## 📁 Projektstruktur
+
+```
+ai-news-curator/
+├── ai_news_curator.py          # Hauptscript mit Claude-Integration
+├── config.yaml                 # Konfiguration (Quellen, Filter, etc.)
+├── requirements.txt            # Python Dependencies
+├── test_sources.py             # Test-Script (ohne API Key)
+│
+├── README.md                   # Diese Datei
+├── QUICK_START.md              # 5-Minuten Setup Guide
+├── CLAUDE.md                   # Claude API Integration Details
+├── GITHUB_ACTIONS_SETUP.md     # GitHub Actions Anleitung
+├── example_output.md           # Beispiel-Report
+│
+└── .github/
+    └── workflows/
+        ├── daily_news.yml          # Vollständiger Workflow
+        └── daily_news_simple.yml   # Einfacher Workflow (empfohlen)
+```
 
 ## 📖 Verwendung
 
