@@ -11,3 +11,10 @@ wheels/
 
 # Environment variables
 .env
+
+# Claude settings
+.claude/settings.local.json
+
+# Generated reports (werden via GitHub Actions committed)
+ai_news_digest_*.md
+test_output.log
