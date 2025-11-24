@@ -15,6 +15,8 @@ wheels/
 # Claude settings
 .claude/settings.local.json
 
-# Generated reports (werden via GitHub Actions committed)
-ai_news_digest_*.md
+# Test logs
 test_output.log
+
+# Note: ai_news_digest_*.md Reports werden absichtlich NICHT ignoriert,
+# damit GitHub Actions sie committen kann!
