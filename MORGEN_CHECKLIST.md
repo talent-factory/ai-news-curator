@@ -2,7 +2,7 @@
 
 ## 📅 Erwartetes Verhalten
 
-**08:00 CET** - GitHub Actions Workflow startet automatisch
+**06:00 CET** - GitHub Actions Workflow startet automatisch
 
 Der Workflow wird:
 1. ✅ 40 News von Hacker News, Reddit, GitHub sammeln
@@ -52,12 +52,12 @@ https://github.com/talent-factory/ai-news-curator/blob/develop/ai_news_digest_20
 **Prüfe:**
 ```bash
 gh workflow list
-gh run list --workflow="Daily AI News Digest (Simple)"
+gh run list --workflow="Daily AI News Digest"
 ```
 
 **Manuell triggern:**
 1. https://github.com/talent-factory/ai-news-curator/actions
-2. "Daily AI News Digest (Simple)" → "Run workflow"
+2. "Daily AI News Digest" → "Run workflow"
 
 ### Workflow ist fehlgeschlagen
 
