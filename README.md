@@ -199,12 +199,29 @@ python ai_news_curator.py
    - Value: Dein Claude API Key
 
 2. **Workflow aktivieren:**
-   - Läuft automatisch täglich um 08:00 CET
+   - Läuft automatisch täglich um 05:00 UTC (06:00 CET)
    - Manuelles Triggern: Actions Tab → "Daily AI News Digest" → "Run workflow"
 
 3. **Reports finden:**
    - Werden automatisch ins Repo committed
    - High-Priority Items erstellen GitHub Issues
+
+4. **⚠️ Wichtig bei manuellen Workflow-Triggers:**
+
+   Wenn du Code-Änderungen im Workflow gemacht hast und manuell triggern willst:
+
+   - **Option 1 (empfohlen):** Warte 2-3 Minuten nach dem Push, bevor du manuell triggerst
+     - GitHub cached Workflow-Definitionen
+     - Die UI zeigt manchmal alte Commits
+
+   - **Option 2 (sofort):** Nutze GitHub CLI:
+     ```bash
+     gh workflow run daily_news.yml --ref develop
+     ```
+
+   - **Scheduled Runs** verwenden immer automatisch den aktuellsten Commit ✅
+
+   **Hintergrund:** GitHub Actions kann beim manuellen Trigger eine gecachte/alte Version des Workflows verwenden. Der automatische scheduled Run hat dieses Problem nicht.
 
 ### Automatisiert via Cron (Linux/Mac)
 
@@ -378,6 +395,21 @@ export ANTHROPIC_API_KEY='dein-key'
 - Prüfe: Repository Settings → Actions → "Allow all actions"
 - Secret korrekt gesetzt?
 - Workflow-File in `.github/workflows/` ?
+
+### Manueller Workflow-Trigger verwendet alte Code-Version
+**Problem:** Du hast Code geändert, aber der manuelle Run verwendet die alte Version.
+
+**Ursache:** GitHub Actions cached Workflow-Definitionen. Beim manuellen Trigger kann GitHub eine alte Branch-Referenz verwenden.
+
+**Lösung:**
+```bash
+# Option 1: Warte 2-3 Minuten nach dem Push, dann triggern
+
+# Option 2: Nutze CLI für sofortiges Triggern mit aktuellem Code
+gh workflow run daily_news.yml --ref develop
+
+# Option 3: Warte auf den scheduled Run (verwendet immer aktuellen Code)
+```
 
 ## 📝 CHANGELOG v2.0
 
