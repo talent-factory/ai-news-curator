@@ -2,15 +2,18 @@
 
 > Intelligenter News-Filter speziell für **Software-Entwicklung mit KI** und **KI-Integration in Produkte** Schulungen.
 
+**Version 2.0:** Jetzt mit erweitertem LLM- und CLI-Tool-Fokus! 🚀
+
 ## 🎓 Das Problem
 
 Als Dozent für KI-Schulungen stehst du vor einer riesigen Herausforderung:
 
 - 📰 Täglich erscheinen dutzende AI/ML News auf Hacker News, Reddit, GitHub
-- ⚡ Die Entwicklung ist rasant: Neue Tools, API-Updates, Breaking Changes
+- ⚡ Die Entwicklung ist rasant: Neue LLMs, API-Updates, neue CLI-Tools, Breaking Changes
 - 🎯 Nur ein Bruchteil ist für deine Studierenden relevant
 - ⏰ Keine Zeit, alles manuell zu sichten und zu bewerten
 - 🔍 Schwierig zu unterscheiden: Marketing-Hype vs. echte Innovation
+- ⌨️ CLI-basierte Entwicklungsumgebungen werden immer wichtiger, aber schwer zu tracken
 
 **Die Folge:** Du verpasst wichtige Updates oder verbringst Stunden mit News-Screening.
 
@@ -18,20 +21,25 @@ Als Dozent für KI-Schulungen stehst du vor einer riesigen Herausforderung:
 
 Ein intelligenter AI News Curator, der:
 
-✅ **Automatisch** relevante News sammelt (Hacker News, Reddit, GitHub, Tech-Blogs)
-✅ **Mit Claude API** die Relevanz für deine Schulungen bewertet
-✅ **Priorisiert** nach Teaching-Relevanz (Score 1-5)
-✅ **Kategorisiert** (Teaching, Tools, Research)
-✅ **Tägliche Reports** generiert mit direkten Links und Kontext
-✅ **Optional automatisiert** läuft via GitHub Actions
+- ✅ **Automatisch** relevante News sammelt (Hacker News, Reddit, GitHub, Tech-Blogs)
+- ✅ **Mit Claude API** die Relevanz für deine Schulungen bewertet
+- ✅ **Priorisiert** nach Teaching-Relevanz (Score 1-5)
+- ✅ **Kategorisiert** (LLM-Releases, CLI-Tools, Teaching, Tools, Research)
+- ✅ **LLM-Fokus:** Erkennt neue Modelle (Claude, GPT, Gemini, o1, Deepseek)
+- ✅ **CLI-Tool-Fokus:** Trackt Cursor, Windsurf, Claude Code, Auggie, Antigravity
+- ✅ **Tägliche Reports** generiert mit direkten Links und Kontext
+- ✅ **Optional automatisiert** läuft via GitHub Actions
+- ✅ **Wartbarer Prompt** in separater Datei (`prompt_template.txt`)
 
 ## 🌟 Features
 
-### 🤖 Intelligente Claude-Integration
-- **Kontext-bewusstes Filtern:** Claude kennt deinen Tech-Stack (Windsurf, Claude Code, VS Code, etc.)
+### 🤖 Intelligente Claude-Integration (NEU v2.0)
+- **Erweiterter Tech-Stack:** Claude, GPT, Gemini, o1, Deepseek, Llama, Mistral
+- **CLI-Tools:** Cursor, Windsurf, Claude Code, Auggie, Antigravity, Bolt.new, v0.dev
+- **Kontext-bewusstes Filtern:** Claude versteht moderne Dev-Workflows
 - **Teaching-Fokus:** Bewertet nicht "cool", sondern "unterrichtsrelevant"
 - **Reasoning:** Erklärt, WARUM eine News wichtig ist
-- **Praxis-orientiert:** Score 5 = "Sofort in Schulung einbauen"
+- **Wartbarer Prompt:** Externe Datei für einfache Anpassungen
 
 ### 📰 News-Quellen
 - Hacker News (AI/LLM/Claude/GPT/Cursor/Windsurf Keywords)
@@ -39,10 +47,16 @@ Ein intelligenter AI News Curator, der:
 - GitHub Trending (AI/ML Repos mit Filter)
 - Erweiterbar um eigene RSS-Feeds
 
-### 📊 Output
+### 📊 Output (NEU v2.0)
 - **Markdown Reports** mit direkten Links
 - **Priorisierte Struktur:** High-Priority → Medium → Low
-- **Kategorien:** Teaching, Tools, Research
+- **6 Kategorien mit Emojis:**
+  - 🤖 LLM-Releases (Claude, GPT, Gemini, o1, etc.)
+  - ⌨️ CLI-Tools (Cursor, Windsurf, Claude Code, etc.)
+  - 🎓 Teaching (Direkt unterrichtsrelevant)
+  - 🛠️ Tools (Dev-Tools, Extensions)
+  - 🔬 Research (Experimentelles)
+- **Kategorien-Statistik** am Ende des Reports
 - **GitHub Issues** (optional) für High-Priority Items
 - **Automatisierbar** via GitHub Actions oder Cron
 
@@ -72,21 +86,32 @@ Ein intelligenter AI News Curator, der:
    └─ GitHub Issues für High-Priority
 ```
 
-**Beispiel einer Claude-Analyse:**
+**Beispiele von Claude-Analysen:**
 ```
-Input: "Google Antigravity: Neue agentic IDE mit Gemini 3"
-
+Input: "Claude 3.7 Opus Released with 500K Context Window"
 Claude analysiert:
-- Relevanz: 5/5 (Direkter Konkurrent zu Windsurf/Cursor)
-- Kategorie: tools
-- Reasoning: "Studierende sollten Vergleich kennen. Agent-first
-  Ansatz zeigt zukünftige Entwicklung."
+- Relevanz: 5/5 (Major LLM Release, direkt relevant)
+- Kategorie: llm_release 🤖
+- Reasoning: "Wichtiges Update für Haupt-LLM der Schulung"
+
+Input: "Cursor 0.42: Multi-Agent Code Editing"
+Claude analysiert:
+- Relevanz: 5/5 (Breaking Change in Haupt-IDE)
+- Kategorie: cli_tools ⌨️
+- Reasoning: "Studierende nutzen Cursor täglich, Update sofort relevant"
+
+Input: "Google Antigravity: Neue agentic IDE mit Gemini"
+Claude analysiert:
+- Relevanz: 4/5 (Neuer Konkurrent zu Cursor/Windsurf)
+- Kategorie: cli_tools ⌨️
+- Reasoning: "Zeigt zukünftige CLI-Tool-Entwicklung, wichtiger Vergleich"
 ```
 
 ## 🚀 Quick Start
 
-📖 **Neu hier?** Lies zuerst die [5-Minuten Quick-Start Anleitung](QUICK_START.md)
-🤖 **Claude API Details?** Siehe [Claude Integration Dokumentation](CLAUDE.md)
+- 📖 **Neu hier?** Lies zuerst die [5-Minuten Quick-Start Anleitung](QUICK_START.md)
+- 🤖 **Claude API & Prompt Details?** Siehe [Claude Integration Dokumentation](CLAUDE.md)
+- 🆕 **NEU in v2.0?** Siehe [CHANGELOG](#-changelog-v20) am Ende
 
 ### 1. Repository Setup
 
@@ -120,18 +145,21 @@ python ai_news_curator.py
 
 Output: `ai_news_digest_YYYYMMDD.md`
 
+**Tipp:** Der Prompt ist jetzt in `prompt_template.txt` - passe ihn nach Bedarf an!
+
 ## 📁 Projektstruktur
 
 ```
 ai-news-curator/
 ├── ai_news_curator.py          # Hauptscript mit Claude-Integration
+├── prompt_template.txt         # 🆕 Externer Analyse-Prompt (anpassbar!)
 ├── config.yaml                 # Konfiguration (Quellen, Filter, etc.)
 ├── requirements.txt            # Python Dependencies
 ├── test_sources.py             # Test-Script (ohne API Key)
 │
 ├── README.md                   # Diese Datei
 ├── QUICK_START.md              # 5-Minuten Setup Guide
-├── CLAUDE.md                   # Claude API Integration Details
+├── CLAUDE.md                   # Claude API & Prompt Engineering Guide
 ├── GITHUB_ACTIONS_SETUP.md     # GitHub Actions Anleitung
 ├── example_output.md           # Beispiel-Report
 │
@@ -180,22 +208,31 @@ Füge hinzu:
 0 8 * * * cd /pfad/zu/ai-news-curator && /usr/bin/python3 ai_news_curator.py
 ```
 
-## 📊 Output Format
+## 📊 Output Format (NEU v2.0)
 
 ```markdown
 # 🎯 AI News Digest für Teaching
-**Datum:** 2025-11-21
+**Datum:** 2025-11-25
 
 ---
 
 ## 🔥 Sofort relevant (Score 4-5)
 
-### Google Antigravity: Neue agentic IDE
-**Quelle:** Hacker News | **Score:** 5/5 | **Kategorie:** tools
+### 🤖 Claude 3.7 Opus Released
+**Quelle:** Hacker News | **Score:** 5/5 | **Kategorie:** llm_release
 
-💡 **Warum relevant:** Direkter Konkurrent zu Windsurf/Cursor. 
-Studierende sollten Vergleich kennen. Agent-first Ansatz zeigt 
-zukünftige Entwicklung.
+💡 **Warum relevant:** Major LLM Release mit 500K Context Window.
+Direkt relevant für Schulung.
+
+🔗 [Link](https://...)
+
+---
+
+### ⌨️ Cursor 0.42: Multi-Agent Code Editing
+**Quelle:** GitHub | **Score:** 5/5 | **Kategorie:** cli_tools
+
+💡 **Warum relevant:** Breaking Change in Haupt-IDE. Studierende
+nutzen Cursor täglich.
 
 🔗 [Link](https://...)
 
@@ -203,16 +240,47 @@ zukünftige Entwicklung.
 
 ## 📊 Beobachten (Score 3)
 
-- **Claude 3.5 Sonnet Update** - Performance Improvements...
-- **New RAG Pattern** - Interessante Architektur...
+- 🛠️ **New RAG Pattern** - Interessante Architektur...
+- 🔬 **Research: Better Prompting** - Gut für Semesterarbeiten...
+
+---
+**Total analysierte Items:** 25
+**Hochpriorität:** 7
+**Mittelpriorität:** 5
+
+**Nach Kategorien:**
+- 🤖 llm_release: 3
+- ⌨️ cli_tools: 5
+- 🎓 teaching: 2
+- 🛠️ tools: 8
+- 🔬 research: 7
 ```
 
 ## ⚙️ Konfiguration
 
-Passe `config.yaml` an für:
+### Prompt anpassen (NEU v2.0)
+
+**Einfach:** Editiere `prompt_template.txt`
+
+```bash
+nano prompt_template.txt
+# oder
+code prompt_template.txt
+```
+
+Passe an:
+- **Tech-Stack:** Füge neue LLMs/Tools hinzu
+- **Kontext:** Ändere Schulungs-Fokus
+- **Kategorien:** Definiere neue Kategorien
+- **Scoring:** Passe Bewertungskriterien an
+
+Siehe [CLAUDE.md](CLAUDE.md) für detaillierte Anleitung zum Prompt Engineering.
+
+### Weitere Konfiguration
+
+`config.yaml` (optional):
 - **News-Quellen:** Blogs, Subreddits, GitHub Topics
 - **Filter-Kriterien:** Was ist hochprior für deine Schulungen?
-- **Tech-Stack:** Welche Tools nutzt dein Team?
 - **Timing:** Wann soll der Digest laufen?
 
 ## 🎓 Use Cases für Teaching
@@ -271,10 +339,13 @@ notion = Client(auth=os.getenv("NOTION_TOKEN"))
 
 ## 📈 Kosten & Limits
 
-**Claude API Kosten:**
-- ~10-20 Items pro Tag
-- ~200 tokens pro Analyse
-- **Gesamt:** ~$0.10-0.30 pro Tag (mit Claude Sonnet 4)
+**Claude API Kosten (NEU v2.0):**
+- ~20-30 Items pro Tag
+- ~800 tokens Input pro Analyse (erweiterter Prompt)
+- ~120 tokens Output
+- **Gesamt:** ~$0.08 pro Tag = ~$2.40/Monat (mit Claude Sonnet 4)
+
+**Details:** Siehe [CLAUDE.md - Kosten & Rate Limits](CLAUDE.md#-kosten--rate-limits)
 
 **GitHub Actions:**
 - 2000 Minuten/Monat kostenlos (Public Repos)
@@ -299,14 +370,40 @@ export ANTHROPIC_API_KEY='dein-key'
 - Secret korrekt gesetzt?
 - Workflow-File in `.github/workflows/` ?
 
-## 🔮 Roadmap
+## 📝 CHANGELOG v2.0
 
+### 🆕 Neue Features
+- ✅ **Externe Prompt-Datei:** `prompt_template.txt` für einfache Wartung
+- ✅ **Erweiterte LLM-Coverage:** Claude, GPT, Gemini, o1, Deepseek, Llama, Mistral
+- ✅ **CLI-Tool-Fokus:** Cursor, Windsurf, Claude Code, Auggie, Antigravity, Bolt.new, v0.dev
+- ✅ **Neue Kategorien:** `llm_release` und `cli_tools` mit Emojis
+- ✅ **Kategorien-Statistik:** Am Ende jedes Reports
+- ✅ **Fallback-Prompt:** Automatisches Fallback wenn Template fehlt
+
+### 🔧 Technische Verbesserungen
+- Prompt-Template in separater Datei (bessere Wartbarkeit)
+- Erweiterte Relevanz-Kriterien für LLMs und CLI-Tools
+- Verbesserte Report-Formatierung mit Emojis
+- Kategorie-Tracking und Statistiken
+
+### 📚 Dokumentation
+- Komplett überarbeitetes [CLAUDE.md](CLAUDE.md) mit Prompt Engineering Guide
+- Aktualisiertes [README.md](README.md) mit v2.0 Features
+- Beispiele für neue Kategorien und Bewertungen
+
+### 💰 Kosten
+- Leicht höhere API-Kosten durch längeren Prompt (~$0.08/Tag statt $0.06/Tag)
+- Immer noch sehr günstig: ~$2.40/Monat
+
+## 🔮 Roadmap v2.1+
+
+- [ ] **Prompt Caching:** 90% Kosten-Reduktion durch Claude Prompt Caching
+- [ ] **Batch-Processing:** 5 Items pro API-Request (80% weniger Calls)
 - [ ] Slack/Discord Bot Integration
 - [ ] Web Dashboard mit Trend-Analyse
 - [ ] Multi-Language Support (EN/DE)
 - [ ] PDF Export mit Grafiken
 - [ ] Duplicate Detection über Tage hinweg
-- [ ] Custom Training für Teaching-Kontext
 
 ## 🤝 Contributing
 
@@ -314,6 +411,7 @@ Dieses Tool ist für **Talent Factory GmbH** entwickelt, aber gerne:
 - Issues für Bugs oder Feature Requests
 - Pull Requests für Verbesserungen
 - Teile deine Anpassungen für andere Schulungs-Kontexte
+- Prompt-Optimierungen für verschiedene Domänen
 
 ## 📄 License
 
@@ -321,6 +419,7 @@ MIT License - Use freely for educational purposes
 
 ---
 
-**Entwickelt für:** Talent Factory GmbH  
-**Kontext:** Software-Entwicklung mit KI & KI-Integration  
-**Powered by:** Claude API (Anthropic)
+**Entwickelt für:** Talent Factory GmbH - 
+**Kontext:** Software-Entwicklung mit KI & KI-Integration - 
+**Powered by:** Claude API (Anthropic) - 
+**Version:** 2.0 - LLM & CLI-Tool Focus

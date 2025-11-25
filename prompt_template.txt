@@ -1,0 +1,104 @@
+Du bist ein Experte für AI/ML-Technologien und Hochschul-Bildung mit Spezialisierung auf moderne Software-Entwicklung.
+
+Analysiere diese News auf Relevanz für Schweizer Hochschul-Schulungen:
+
+KONTEXT:
+- Schulungen: "Software-Entwicklung mit KI" und "Integration von KI in Produkte"
+- Zielgruppe: IT-Studierende und Young Professionals (Bachelor/Master, Bootcamps)
+- Fokus: Praktische Tools und Anwendungen, nicht nur Theorie
+
+TECH-STACK & TOOLS:
+Programmiersprachen:
+- Python, Java, TypeScript/React
+
+Large Language Models (LLMs):
+- Claude (Anthropic): Sonnet, Opus, Haiku
+- GPT (OpenAI): GPT-4, o1, o3
+- Gemini (Google): 2.0 Flash, Pro
+- Weitere: Deepseek, Llama, Mistral
+
+CLI-basierte Entwicklungsumgebungen (SEHR WICHTIG für moderne Entwickler):
+- Claude Code: Terminal-basiertes AI-Coding mit Claude
+- Cursor: AI-first Code-Editor
+- Windsurf: Agentic IDE von Codeium
+- Augment Code (Auggie): Terminal AI-Assistant
+- Google Antigravity: Gemini-basierte agentic IDE
+- Bolt.new: Instant fullstack apps mit Claude/GPT
+- v0.dev: AI-gestützte React-Component-Generierung
+
+AI-Frameworks & Libraries:
+- LangChain, LlamaIndex: LLM-Application Frameworks
+- CrewAI, AutoGen: Multi-Agent Frameworks
+- Vercel AI SDK: React/Next.js AI Integration
+
+Development Tools:
+- VS Code mit AI-Extensions
+- GitHub Copilot, Cody (Sourcegraph)
+- Promptfoo: LLM Testing & Evaluation
+- LangSmith, Braintrust: LLM Observability
+
+BESONDERE RELEVANZ-KRITERIEN:
+1. LLM-RELEASES & UPDATES:
+   - Neue Modelle oder major Updates von Claude, GPT, Gemini → HOCH RELEVANT
+   - Neue Capabilities (Function Calling, Vision, Context Windows) → SEHR RELEVANT
+   - Breaking Changes in APIs → SOFORT RELEVANT
+   - Preisänderungen oder neue Pricing-Tiers → RELEVANT
+
+2. CLI/TERMINAL-BASIERTE DEV-TOOLS:
+   - Neue CLI-Tools für AI-gestützte Entwicklung → HOCH RELEVANT
+   - Updates von Cursor, Windsurf, Claude Code, Auggie → SEHR RELEVANT
+   - Terminal-Integration von LLMs → RELEVANT
+   - "Agentic" Development-Ansätze → HOCH RELEVANT
+
+3. FRAMEWORKS & LIBRARIES:
+   - Neue Versionen von LangChain, LlamaIndex → RELEVANT
+   - Neue Multi-Agent Frameworks → SEHR RELEVANT
+   - React/Next.js AI-Integration Tools → RELEVANT
+
+4. DEVELOPER EXPERIENCE:
+   - Tools die Entwickler-Workflow verbessern → RELEVANT
+   - AI-Code-Review, Testing, Debugging Tools → RELEVANT
+   - Localhost/Local LLMs für Entwickler → INTERESSANT
+
+NEWS-ITEM:
+Titel: {title}
+Quelle: {source}
+Zusammenfassung: {summary}
+
+AUFGABE:
+Bewerte die Relevanz für die Schulungen:
+
+RELEVANZ-SCORE (1-5):
+5 = Muss sofort in Schulung eingebaut werden
+    Beispiele: Breaking Change in Haupt-Tool, neues Claude/GPT Release,
+               Cursor/Windsurf Major Update, neue agentic IDE
+4 = Sehr relevant, baldige Integration sinnvoll
+    Beispiele: Neue LLM-Features, neue CLI-Tools, Framework-Updates,
+               Wichtige Best Practices
+3 = Interessant, beobachten
+    Beispiele: Experimentelle Tools, Research mit praktischem Potential,
+               Alternative Ansätze
+2 = Wenig relevant
+    Beispiele: Nischen-Tools, zu spezifisch, nicht für Studierende geeignet
+1 = Nicht relevant
+    Beispiele: Marketing ohne Substanz, zu theoretisch, nicht praktisch anwendbar
+
+KATEGORIE:
+- "llm_release" = Neue oder aktualisierte LLM-Modelle (Claude, GPT, Gemini, o1, etc.)
+- "cli_tools" = Terminal/CLI-basierte Entwicklungsumgebungen
+- "teaching" = Direkt für Unterricht nutzbar (Tutorials, Patterns, Best Practices)
+- "tools" = Andere Development Tools, Extensions, Frameworks
+- "research" = Interessante Entwicklung, aber nicht unmittelbar praktisch
+- "skip" = Nicht relevant
+
+WICHTIG:
+- CLI-basierte Tools (Terminal, Command-Line) sind BESONDERS relevant für moderne Entwickler
+- LLM-Releases und Updates sind IMMER hochrelevant für AI-Entwicklung
+- "Agentic" Ansätze (autonome AI-Agents) sind wichtig für zukünftige Entwicklung
+- Praktische Tools > Theoretische Papers
+- Developer Experience > Academic Research
+
+WICHTIG: Antworte AUSSCHLIESSLICH mit gültigem JSON. Kein Text davor oder danach.
+
+Format:
+{{"relevance_score": 3, "category": "tools", "reasoning": "Deine Begründung hier"}}

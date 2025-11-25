@@ -32,7 +32,7 @@ class NewsItem:
     reasoning: str
 
 class AINewsCurator:
-    def __init__(self, anthropic_api_key: str):
+    def __init__(self, anthropic_api_key: str, prompt_template_path: str = "prompt_template.txt"):
         self.client = anthropic.Anthropic(api_key=anthropic_api_key)
         self.sources = {
             'anthropic_blog': 'https://www.anthropic.com/news',
@@ -40,6 +40,49 @@ class AINewsCurator:
             'google_ai': 'https://blog.google/technology/ai/rss',
             'hacker_news_ai': 'https://hnrss.org/newest?q=AI+OR+LLM+OR+Claude+OR+GPT',
         }
+
+        # Load prompt template from file
+        try:
+            with open(prompt_template_path, 'r', encoding='utf-8') as f:
+                self.prompt_template = f.read()
+        except FileNotFoundError:
+            print(f"⚠️  Warning: Prompt template not found at {prompt_template_path}")
+            print("    Using fallback prompt...")
+            self.prompt_template = self._get_fallback_prompt()
+
+    def _get_fallback_prompt(self) -> str:
+        """Fallback prompt if template file is not found"""
+        return """Du bist ein Experte für AI/ML-Technologien und Hochschul-Bildung.
+
+Analysiere diese News auf Relevanz für Schweizer Hochschul-Schulungen:
+
+KONTEXT:
+- Schulungen: "Software-Entwicklung mit KI" und "Integration von KI in Produkte"
+- Zielgruppe: IT-Studierende und Young Professionals
+- Tech-Stack: Python, Java, React, Claude, GPT, Cursor, Windsurf, Claude Code
+
+NEWS-ITEM:
+Titel: {title}
+Quelle: {source}
+Zusammenfassung: {summary}
+
+RELEVANZ-SCORE (1-5):
+5 = Muss sofort in Schulung eingebaut werden
+4 = Sehr relevant, baldige Integration sinnvoll
+3 = Interessant, beobachten
+2 = Wenig relevant
+1 = Nicht relevant
+
+KATEGORIE:
+- "teaching" = Direkt für Unterricht nutzbar
+- "tools" = Tool-Update/neue Entwicklungsumgebung
+- "research" = Interessante Entwicklung
+- "skip" = Nicht relevant
+
+WICHTIG: Antworte AUSSCHLIESSLICH mit gültigem JSON. Kein Text davor oder danach.
+
+Format:
+{{"relevance_score": 3, "category": "tools", "reasoning": "Deine Begründung hier"}}"""
 
     def extract_json_from_text(self, text: str) -> Optional[Dict]:
         """Extrahiert JSON aus Text, auch wenn Claude Text drum herum schreibt"""
@@ -137,41 +180,12 @@ class AINewsCurator:
             if idx > 1:
                 time.sleep(0.3)  # 300ms zwischen Requests
 
-            prompt = f"""Du bist ein Experte für AI/ML-Technologien und Hochschul-Bildung.
-
-Analysiere diese News auf Relevanz für Schweizer Hochschul-Schulungen:
-
-KONTEXT:
-- Schulungen: "Software-Entwicklung mit KI" und "Integration von KI in Produkte"
-- Zielgruppe: IT-Studierende und Young Professionals
-- Tech-Stack: Python, Java, React, Windsurf, VS Code, Claude Code, Augment Code
-- Fokus: Praktische Tools und Anwendungen, nicht nur Theorie
-
-NEWS-ITEM:
-Titel: {item['title']}
-Quelle: {item['source']}
-Zusammenfassung: {item['summary'][:300]}
-
-AUFGABE:
-Bewerte die Relevanz für die Schulungen:
-
-RELEVANZ-SCORE (1-5):
-5 = Muss sofort in Schulung eingebaut werden
-4 = Sehr relevant, baldige Integration sinnvoll
-3 = Interessant, beobachten
-2 = Wenig relevant
-1 = Nicht relevant
-
-KATEGORIE:
-- "teaching" = Direkt für Unterricht nutzbar
-- "tools" = Tool-Update/neue Entwicklungsumgebung
-- "research" = Interessante Entwicklung, nicht unmittelbar praktisch
-- "skip" = Nicht relevant
-
-WICHTIG: Antworte AUSSCHLIESSLICH mit gültigem JSON. Kein Text davor oder danach.
-
-Format:
-{{"relevance_score": 3, "category": "tools", "reasoning": "Deine Begründung hier"}}"""
+            # Use template and fill in the news item details
+            prompt = self.prompt_template.format(
+                title=item['title'],
+                source=item['source'],
+                summary=item['summary'][:300]
+            )
 
             try:
                 response = self.client.messages.create(
@@ -231,9 +245,9 @@ Format:
     
     def generate_report(self, analyzed_items: List[NewsItem]) -> str:
         """Erstellt Markdown-Report"""
-        
+
         today = datetime.now().strftime("%Y-%m-%d")
-        
+
         report = f"""# 🎯 AI News Digest für Teaching
 **Datum:** {today}
 **Generiert für:** Talent Factory GmbH - Software-Entwicklung mit KI
@@ -243,15 +257,26 @@ Format:
 ## 🔥 Sofort relevant (Score 4-5)
 
 """
-        
+
         high_priority = [item for item in analyzed_items if item.relevance_score >= 4]
         medium_priority = [item for item in analyzed_items if item.relevance_score == 3]
-        
+
+        # Kategorien-Emojis für bessere Übersicht
+        category_emojis = {
+            'llm_release': '🤖',
+            'cli_tools': '⌨️',
+            'teaching': '🎓',
+            'tools': '🛠️',
+            'research': '🔬',
+            'frameworks': '📦'
+        }
+
         if not high_priority:
-            report += "_Keine hochprioren Updates heute._\n\n"
+            report += "_Keine hochprioritäre Updates heute._\n\n"
         else:
             for item in high_priority:
-                report += f"""### {item.title}
+                emoji = category_emojis.get(item.category, '📌')
+                report += f"""### {emoji} {item.title}
 **Quelle:** {item.source} | **Score:** {item.relevance_score}/5 | **Kategorie:** {item.category}
 
 💡 **Warum relevant:** {item.reasoning}
@@ -261,17 +286,23 @@ Format:
 ---
 
 """
-        
+
         report += """## 📊 Beobachten (Score 3)
 
 """
-        
+
         if not medium_priority:
-            report += "_Keine mittelprioren Updates._\n\n"
+            report += "_Keine mittelprioritäre Updates._\n\n"
         else:
             for item in medium_priority:
-                report += f"- **{item.title}** ([Link]({item.url})) - {item.reasoning}\n"
-        
+                emoji = category_emojis.get(item.category, '📌')
+                report += f"- {emoji} **{item.title}** ([Link]({item.url})) - {item.reasoning}\n"
+
+        # Kategorien-Statistik
+        categories = {}
+        for item in analyzed_items:
+            categories[item.category] = categories.get(item.category, 0) + 1
+
         report += f"""
 
 ---
@@ -279,9 +310,14 @@ Format:
 **Hochpriorität:** {len(high_priority)}
 **Mittelpriorität:** {len(medium_priority)}
 
-_Generiert mit Claude API | Talent Factory GmbH_
+**Nach Kategorien:**
 """
-        
+        for cat, count in sorted(categories.items(), key=lambda x: x[1], reverse=True):
+            emoji = category_emojis.get(cat, '📌')
+            report += f"- {emoji} {cat}: {count}\n"
+
+        report += "\n_Generiert mit Claude API | Talent Factory GmbH_\n"
+
         return report
     
     def run(self, hours_back: int = 24) -> str:

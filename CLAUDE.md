@@ -13,156 +13,168 @@ Der AI News Curator nutzt **Anthropic's Claude API** als intelligenten Filter-Ag
 
 ## 🎯 Der Analyse-Prompt
 
-### Template-Struktur
+### Neue Architektur: Externe Prompt-Datei
 
-```python
-prompt = f"""Analysiere diese AI/Tech-News auf Relevanz für Schweizer Hochschul-Schulungen.
+**NEU ab Version 2.0:** Der Prompt ist jetzt in `prompt_template.txt` ausgelagert!
 
-Kontext:
-- Schulungen: "Software-Entwicklung mit KI" und "Integration von KI in Produkte"
-- Zielgruppe: IT-Studierende und Young Professionals
-- Tech-Stack: Python, Java, React, Windsurf, VS Code, Claude Code, Augment Code
-- Fokus: Praktische Tools und Anwendungen, nicht nur Theorie
+**Vorteile:**
+- ✅ Einfacher zu warten und zu iterieren
+- ✅ Versionskontrolle für Prompt-Änderungen
+- ✅ Keine Code-Änderungen für Prompt-Anpassungen
+- ✅ Teilen und Wiederverwenden von Prompts
 
-News-Item:
-Titel: {item['title']}
-Quelle: {item['source']}
-URL: {item['url']}
-Zusammenfassung: {item['summary']}
+### Aktuelle Template-Struktur
 
-Bewerte nach folgenden Kriterien:
-
-1. RELEVANZ-SCORE (1-5):
-   5 = Muss sofort in Schulung eingebaut werden
-   4 = Sehr relevant, baldige Integration sinnvoll
-   3 = Interessant, beobachten
-   2 = Wenig relevant
-   1 = Nicht relevant
-
-2. KATEGORIE:
-   - "teaching" = Direkt für Unterricht nutzbar
-   - "tools" = Tool-Update/neue Entwicklungsumgebung
-   - "research" = Interessante Entwicklung, aber nicht unmittelbar praktisch
-   - "skip" = Nicht relevant
-
-3. REASONING: Kurze Begründung (1-2 Sätze)
-
-Antworte NUR mit JSON:
-{{
-  "relevance_score": <1-5>,
-  "category": "<teaching|tools|research|skip>",
-  "reasoning": "<begründung>"
-}}"""
-```
-
-### Prompt-Komponenten erklärt
+Die Datei `prompt_template.txt` enthält den vollständigen Analyse-Prompt mit:
 
 #### 1. Kontext-Sektion
 ```yaml
-Kontext:
+KONTEXT:
 - Schulungen: "Software-Entwicklung mit KI" und "Integration von KI in Produkte"
 - Zielgruppe: IT-Studierende und Young Professionals
-- Tech-Stack: Python, Java, React, Windsurf, VS Code, Claude Code, Augment Code
 - Fokus: Praktische Tools und Anwendungen, nicht nur Theorie
 ```
 
-**Warum wichtig?** Claude verwendet diesen Kontext, um die Relevanz zu bewerten. Ohne diesen Kontext würde Claude generisch bewerten ("ist das wichtig für irgendwen?") statt spezifisch ("ist das wichtig für MEINE Studierenden?").
+**Neu:** Der Kontext ist präziser auf die tatsächliche Zielgruppe fokussiert.
 
-**Anpassung:** Editiere `config.yaml` → `teaching_context` oder passe direkt in `ai_news_curator.py:107-113` an.
+#### 2. Erweiterter Tech-Stack
 
-#### 2. Scoring-System (1-5)
+**Large Language Models (LLMs):**
+- Claude (Anthropic): Sonnet, Opus, Haiku
+- GPT (OpenAI): GPT-4, o1, o3
+- Gemini (Google): 2.0 Flash, Pro
+- Weitere: Deepseek, Llama, Mistral
+
+**CLI-basierte Entwicklungsumgebungen:**
+- Claude Code: Terminal-basiertes AI-Coding
+- Cursor: AI-first Code-Editor
+- Windsurf: Agentic IDE von Codeium
+- Augment Code (Auggie): Terminal AI-Assistant
+- Google Antigravity: Gemini-basierte agentic IDE
+- Bolt.new: Instant fullstack apps
+- v0.dev: AI-gestützte React-Component-Generierung
+
+**AI-Frameworks & Libraries:**
+- LangChain, LlamaIndex: LLM-Application Frameworks
+- CrewAI, AutoGen: Multi-Agent Frameworks
+- Vercel AI SDK: React/Next.js AI Integration
+
+**Development Tools:**
+- VS Code mit AI-Extensions
+- GitHub Copilot, Cody
+- Promptfoo, LangSmith, Braintrust
+
+#### 3. Neue Relevanz-Kriterien
+
+**LLM-RELEASES & UPDATES:**
+- Neue Modelle → HOCH RELEVANT
+- Neue Capabilities → SEHR RELEVANT
+- Breaking Changes → SOFORT RELEVANT
+- Preisänderungen → RELEVANT
+
+**CLI/TERMINAL-BASIERTE DEV-TOOLS:**
+- Neue CLI-Tools → HOCH RELEVANT
+- Updates von Cursor/Windsurf/Claude Code → SEHR RELEVANT
+- "Agentic" Development → HOCH RELEVANT
+
+#### 4. Erweiterte Kategorien
+
+Neu sind **6 Kategorien** statt 4:
+
+- `llm_release` 🤖 = Neue oder aktualisierte LLM-Modelle
+- `cli_tools` ⌨️ = Terminal/CLI-basierte Entwicklungsumgebungen
+- `teaching` 🎓 = Direkt für Unterricht nutzbar
+- `tools` 🛠️ = Development Tools, Extensions
+- `research` 🔬 = Interessante Entwicklung
+- `skip` = Nicht relevant
+
+#### 5. Verbessertes Scoring mit Beispielen
+
 ```
 5 = Muss sofort in Schulung eingebaut werden
+    Beispiele: Breaking Change in Haupt-Tool, neues Claude/GPT Release,
+               Cursor/Windsurf Major Update, neue agentic IDE
+
 4 = Sehr relevant, baldige Integration sinnvoll
+    Beispiele: Neue LLM-Features, neue CLI-Tools, Framework-Updates
+
 3 = Interessant, beobachten
-2 = Wenig relevant
-1 = Nicht relevant
+    Beispiele: Experimentelle Tools, Research mit praktischem Potential
 ```
-
-**Warum 1-5?** Gibt dir klare Handlungsempfehlungen:
-- **5:** Action needed NOW
-- **4:** Plan für nächste Session
-- **3:** Auf Radar behalten
-- **1-2:** Ignorieren
-
-**Beispiele:**
-- Score 5: "Windsurf 2.0 mit Breaking Changes" (Dein Haupt-Tool!)
-- Score 4: "Neue Claude API Feature für Code-Gen" (Relevant für Kurs)
-- Score 3: "Interessantes RAG Pattern" (Gut zu wissen)
-- Score 1: "OpenAI CEO Tweet ohne Substanz" (Marketing)
-
-#### 3. Kategorien
-```
-- "teaching" = Direkt für Unterricht nutzbar
-- "tools" = Tool-Update/neue Entwicklungsumgebung
-- "research" = Interessante Entwicklung, nicht unmittelbar praktisch
-- "skip" = Nicht relevant
-```
-
-**Verwendung im Report:**
-- **teaching:** "Diese API-Change zeig ich morgen in der Vorlesung"
-- **tools:** "Studierende sollten das neue Feature kennen"
-- **research:** "Spannend für Semesterarbeit-Themen"
-- **skip:** Wird nicht im Report angezeigt
-
-#### 4. Reasoning (1-2 Sätze)
-```
-"Direkter Konkurrent zu Windsurf/Cursor. Das agent-first Konzept
-ist ein neuer Ansatz, den Studierende verstehen sollten."
-```
-
-**Warum wichtig?**
-- Du siehst sofort WARUM Claude etwas als wichtig einstuft
-- Hilft dir zu entscheiden: Stimme ich zu?
-- Kann direkt in Vorlesung gezeigt werden ("Claude sagt...")
 
 ## 🔧 Prompt Anpassen
 
-### Für andere Schulungs-Kontexte
+### Methode 1: Direkt in prompt_template.txt editieren
 
-**Beispiel: Data Science Bootcamp**
+```bash
+# Öffne die Datei
+nano prompt_template.txt
 
-```python
-Kontext:
-- Schulungen: "Data Science für Einsteiger"
-- Zielgruppe: Career Switcher, Junior Data Scientists
-- Tech-Stack: Python, Jupyter, pandas, scikit-learn, TensorFlow
-- Fokus: Praktische Data Science Workflows, MLOps
+# Oder mit deinem Editor
+code prompt_template.txt
 ```
 
-**Beispiel: Enterprise AI Development**
+**Beispiel-Anpassungen:**
 
-```python
-Kontext:
+**Fokus auf Data Science:**
+```
+KONTEXT:
+- Schulungen: "Data Science mit AI-Tools"
+- Zielgruppe: Data Scientists, ML Engineers
+- Tech-Stack: Python, Jupyter, pandas, scikit-learn, TensorFlow, PyTorch
+```
+
+**Fokus auf Enterprise:**
+```
+KONTEXT:
 - Schulungen: "Enterprise AI Integration"
 - Zielgruppe: Senior Developers, Architects
-- Tech-Stack: Java, Spring Boot, Azure OpenAI, LangChain
-- Fokus: Production-ready AI Integration, Security, Skalierung
+- Tech-Stack: Java, Spring Boot, Azure OpenAI, AWS Bedrock
 ```
 
-### Für strengere Filter
-
-Wenn du WENIGER News willst (nur das Wichtigste):
+### Methode 2: Alternative Prompt-Datei verwenden
 
 ```python
-1. RELEVANZ-SCORE (1-5):
-   5 = Kritisches Update, das Schulung sofort betrifft
-   4 = Sehr relevant für Unterricht
-   3 = Interessant für fortgeschrittene Studierende
-   2 = Nischentopic
-   1 = Nicht relevant
-
-# Dann in generate_report():
-high_priority = [item for item in analyzed_items if item.relevance_score >= 5]
+# In ai_news_curator.py oder beim Initialisieren
+curator = AINewsCurator(
+    api_key,
+    prompt_template_path="custom_prompt.txt"
+)
 ```
 
-### Für lockere Filter
+### Methode 3: Prompt-Versionierung
 
-Wenn du MEHR News willst (auch experimentelles):
+```bash
+# Git-basierte Versionierung
+cp prompt_template.txt prompts/v2.0_llm_focus.txt
+git add prompts/
+git commit -m "Add LLM-focused prompt variant"
+```
 
-```python
-high_priority = [item for item in analyzed_items if item.relevance_score >= 3]
-medium_priority = [item for item in analyzed_items if item.relevance_score == 2]
+## 📊 Output-Format mit neuen Kategorien
+
+Reports zeigen jetzt Kategorien mit Emojis:
+
+```markdown
+## 🔥 Sofort relevant (Score 4-5)
+
+### 🤖 Claude 3.7 Opus Released
+**Quelle:** Hacker News | **Score:** 5/5 | **Kategorie:** llm_release
+
+💡 **Warum relevant:** Major LLM Release...
+
+### ⌨️ Cursor 0.42: Multi-Agent Editing
+**Quelle:** GitHub | **Score:** 5/5 | **Kategorie:** cli_tools
+
+💡 **Warum relevant:** Wichtiges Update für Haupt-IDE...
+
+---
+
+**Nach Kategorien:**
+- 🤖 llm_release: 3
+- ⌨️ cli_tools: 5
+- 🎓 teaching: 2
+- 🛠️ tools: 4
 ```
 
 ## 💰 Kosten & Rate Limits
@@ -170,53 +182,42 @@ medium_priority = [item for item in analyzed_items if item.relevance_score == 2]
 ### Claude Sonnet 4 Pricing (Stand Januar 2025)
 
 ```
-Input:  ~$3 per Million Tokens
-Output: ~$15 per Million Tokens
+Input:  $3 per Million Tokens
+Output: $15 per Million Tokens
 ```
 
 ### Typischer Daily Digest (20 News-Items)
 
+**Mit neuem, längerem Prompt:**
 ```
 Pro News-Item:
-- Input:  ~500 tokens (Prompt + News)
-- Output: ~100 tokens (JSON Response)
+- Input:  ~800 tokens (Erweiterter Prompt + News)
+- Output: ~120 tokens (JSON Response)
 
 Tägliche Kosten:
-- Input:  20 × 500 = 10,000 tokens = $0.03
-- Output: 20 × 100 = 2,000 tokens  = $0.03
-- TOTAL: ~$0.06 pro Tag
+- Input:  20 × 800 = 16,000 tokens = $0.048
+- Output: 20 × 120 = 2,400 tokens  = $0.036
+- TOTAL: ~$0.08 pro Tag
 ```
 
-**Monatlich:** ~$1.80 (bei täglichem Run)
-**Jährlich:** ~$22
+**Monatlich:** ~$2.40 (bei täglichem Run)
+**Jährlich:** ~$29
 
-### Rate Limits
-
-Anthropic Claude API Standard Tier:
-- **Requests:** 50 requests/minute
-- **Tokens:** 40,000 tokens/minute
-
-**Unser Script:** ~20 requests in 2-3 Minuten → Kein Problem!
+**Hinweis:** Leicht höhere Kosten durch erweiterten Prompt, aber immer noch sehr günstig!
 
 ### Kosten optimieren
 
-**Option 1: Weniger News analysieren**
+**Option 1: Prompt Caching (Beta)**
 ```python
-# In fetch_news():
-for entry in hn_feed.entries[:10]:  # Statt [:20]
-```
-
-**Option 2: Caching nutzen**
-```python
-# Anthropic Prompt Caching (Beta)
+# Anthropic Prompt Caching
 # Spart 90% Input-Kosten bei wiederholtem Kontext
+# TODO: Implementierung geplant für v2.1
 ```
 
-**Option 3: Nur Werktags**
-```yaml
-# In .github/workflows/daily_news.yml
-schedule:
-  - cron: '0 7 * * 1-5'  # Montag-Freitag
+**Option 2: Batch-Processing**
+```python
+# TODO: 5 Items pro Request statt 1
+# Reduziert API-Calls um 80%
 ```
 
 ## 🔐 API Key Setup
@@ -230,109 +231,125 @@ schedule:
 
 ### Lokal verwenden
 
-**Option 1: Environment Variable (Empfohlen)**
+**Empfohlen: Environment Variable**
 ```bash
 export ANTHROPIC_API_KEY='sk-ant-api03-...'
 ```
 
-**Option 2: .env File**
+**Persistent (in ~/.bashrc oder ~/.zshrc):**
+```bash
+echo 'export ANTHROPIC_API_KEY="sk-ant-..."' >> ~/.bashrc
+source ~/.bashrc
+```
+
+**Alternative: .env File**
 ```bash
 # .env
 ANTHROPIC_API_KEY=sk-ant-api03-...
 ```
 
-Dann in Code:
-```python
-from dotenv import load_dotenv
-load_dotenv()
-api_key = os.getenv('ANTHROPIC_API_KEY')
-```
-
-**Option 3: Config File (NICHT empfohlen)**
-```yaml
-# ❌ NICHT committen!
-api_key: sk-ant-api03-...
-```
-
-### In GitHub Actions
-
-Siehe [GITHUB_ACTIONS_SETUP.md](GITHUB_ACTIONS_SETUP.md)
-
 ## 🛠️ Troubleshooting
 
-### Error: "ANTHROPIC_API_KEY not set"
+### Error: "Prompt template not found"
 
-**Ursache:** Environment Variable nicht gesetzt
+**Ursache:** `prompt_template.txt` fehlt im Working Directory
 
 **Lösung:**
 ```bash
-echo $ANTHROPIC_API_KEY  # Sollte deinen Key zeigen
-export ANTHROPIC_API_KEY='sk-ant-...'
+# Check if file exists
+ls -la prompt_template.txt
+
+# If missing, restore from git
+git checkout prompt_template.txt
 ```
 
-### Error: "Invalid API Key"
+**Fallback:** Script verwendet automatisch einen eingebauten Fallback-Prompt.
 
-**Ursache:** Key falsch kopiert oder abgelaufen
+### Error: "KeyError: 'title' or 'source' or 'summary'"
+
+**Ursache:** Prompt-Template verwendet Platzhalter, die nicht existieren
 
 **Lösung:**
-1. Console checken: https://console.anthropic.com/settings/keys
-2. Neuen Key erstellen
-3. Sicherstellen: Keine Leerzeichen beim Kopieren!
+Stelle sicher, dass `prompt_template.txt` diese Platzhalter enthält:
+- `{title}` - News-Titel
+- `{source}` - News-Quelle
+- `{summary}` - News-Zusammenfassung
 
-### Error: "Rate limit exceeded"
+### Prompt-Änderungen werden nicht übernommen
 
-**Ursache:** Zu viele Requests in kurzer Zeit (unwahrscheinlich bei unserem Script)
-
-**Lösung:**
-```python
-import time
-
-for item in news_items:
-    # ...
-    time.sleep(0.5)  # 500ms Pause zwischen Requests
-```
-
-### Error: "JSON parsing failed"
-
-**Ursache:** Claude hat nicht mit gültigem JSON geantwortet
+**Ursache:** Du musst das Script neu starten nach Prompt-Änderungen
 
 **Lösung:**
-```python
-try:
-    analysis = json.loads(response.content[0].text)
-except json.JSONDecodeError:
-    print(f"Claude response: {response.content[0].text}")
-    # Fallback zu default values
-    analysis = {
-        "relevance_score": 2,
-        "category": "skip",
-        "reasoning": "Analysis failed"
-    }
+```bash
+# Stoppe aktuellen Run
+Ctrl+C
+
+# Starte neu
+python ai_news_curator.py
 ```
 
-### Analyse-Qualität ist schlecht
+### Claude ignoriert neue Kategorien
 
-**Problem:** Claude bewertet nicht nach deinen Kriterien
+**Problem:** Claude verwendet alte Kategorien (teaching, tools, research, skip)
 
-**Lösung 1: Kontext verbessern**
-```python
-# Füge MEHR Kontext hinzu
-Kontext:
-- Schulungen: ...
-- Zielgruppe: ...
-- Was Studierende BEREITS kennen: React, Python Basics
-- Was sie NICHT kennen: Advanced ML, Papers
-- Lernziele: Praktische Tool-Nutzung, nicht Theorie
+**Lösung:**
+1. Check `prompt_template.txt` enthält neue Kategorien
+2. Füge Beispiele für neue Kategorien hinzu
+3. Mache die Definitionen expliziter
+
+**Beispiel-Verbesserung:**
+```
+KATEGORIE (WICHTIG: Nutze die NEUEN Kategorien!):
+- "llm_release" = LLM-Modell Updates (Claude, GPT, Gemini, etc.)
+- "cli_tools" = Terminal/CLI Tools (Cursor, Windsurf, Claude Code, etc.)
+...
 ```
 
-**Lösung 2: Few-Shot Examples**
-```python
-Beispiele:
-- "Windsurf 2.0 Update" → Score 5, Kategorie: tools
-  Reasoning: "Haupt-IDE der Schulung, Update ist relevant"
+## 📚 Prompt Engineering Best Practices
 
-- "Research Paper über Transformers" → Score 2, Kategorie: skip
-  Reasoning: "Zu theoretisch für praktische Schulung"
+### 1. Iteratives Verbesserung
+
+```bash
+# Workflow für Prompt-Optimierung
+1. Baseline: Ersten Report generieren
+2. Analyse: Welche News wurden falsch bewertet?
+3. Update: prompt_template.txt anpassen
+4. Test: Neuen Report generieren
+5. Repeat: Bis Qualität passt
+```
+
+### 2. Few-Shot Examples hinzufügen
+
+Wenn Claude Kategorien falsch zuordnet:
+
+```
+BEISPIELE:
+- "Cursor 0.42 Released" → Score 5, Kategorie: cli_tools
+  Reasoning: "Wichtiges Update für Haupt-IDE der Studierenden"
+
+- "Claude 3.7 Opus API" → Score 5, Kategorie: llm_release
+  Reasoning: "Major LLM Release, direkt relevant für AI-Entwicklung"
+
+- "Research Paper: Transformers" → Score 2, Kategorie: skip
+  Reasoning: "Zu theoretisch, nicht praktisch anwendbar"
+```
+
+### 3. Klare Prioritäten setzen
+
+```
+WICHTIG (Sortierung nach Relevanz):
+1. CLI-basierte Dev-Tools (Cursor, Windsurf, Claude Code) → HÖCHSTE PRIORITÄT
+2. LLM-Releases (Claude, GPT, Gemini) → SEHR HOCH
+3. Frameworks für AI-Development → HOCH
+4. Theoretische Papers → NIEDRIG
+```
+
+### 4. Kontext regelmässig updaten
+
+```bash
+# Alle 3 Monate Tech-Stack aktualisieren
+# Neue Tools hinzufügen
+# Veraltete Tools entfernen
 ```
 
 ## 🔄 Alternative LLM APIs
@@ -342,90 +359,51 @@ Falls du Claude nicht nutzen willst/kannst:
 ### OpenAI GPT-4
 ```python
 from openai import OpenAI
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 response = client.chat.completions.create(
     model="gpt-4-turbo",
-    messages=[{"role": "user", "content": prompt}],
-    max_tokens=300
+    messages=[{"role": "user", "content": prompt}]
 )
 ```
 
 **Kosten:** ~$0.01/1K Input Tokens (3× teurer als Claude)
 
-### Ollama (Lokal, kostenlos)
-```python
-import requests
-
-response = requests.post('http://localhost:11434/api/generate',
-    json={
-        'model': 'llama2',
-        'prompt': prompt
-    }
-)
-```
-
-**Pros:** Kostenlos, Privacy
-**Cons:** Langsamere/weniger gute Analyse als Claude
-
 ### Google Gemini
 ```python
 import google.generativeai as genai
-genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
+genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 model = genai.GenerativeModel('gemini-1.5-flash')
 response = model.generate_content(prompt)
 ```
 
 **Kosten:** ~$0.075/1M Tokens (günstiger als Claude)
 
-## 📚 Best Practices
-
-### 1. Prompt-Iterationen
-
-Starte mit dem Standard-Prompt, dann:
-- Analysiere erste Reports
-- Sind Scores zu hoch/niedrig? → Beschreibung anpassen
-- Sind Begründungen zu allgemein? → "Konkret auf Schulung beziehen"
-- Kategorien falsch? → Klarere Definitionen
-
-### 2. Batch-Processing
-
+### Ollama (Lokal, kostenlos)
 ```python
-# Aktuell: 1 Request pro News-Item
-# Besser für Kosten (mit Prompt Caching):
-# Batch von 5 Items pro Request
+import requests
+
+response = requests.post('http://localhost:11434/api/generate',
+    json={'model': 'llama2', 'prompt': prompt}
+)
 ```
 
-### 3. Caching
-
-```python
-# Für wiederholte Kontext-Teile
-# Spart 90% Input-Kosten
-# Siehe: https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching
-```
-
-### 4. Monitoring
-
-```python
-# Log Costs
-total_input_tokens = 0
-total_output_tokens = 0
-
-# Nach jedem Request:
-total_input_tokens += response.usage.input_tokens
-total_output_tokens += response.usage.output_tokens
-
-print(f"Kosten heute: ${total_input_tokens/1e6 * 3 + total_output_tokens/1e6 * 15:.3f}")
-```
+**Pros:** Kostenlos, Privacy
+**Cons:** Schlechtere Analyse-Qualität
 
 ## 🎓 Weiterführende Links
 
 - **Claude API Docs:** https://docs.anthropic.com/
 - **Prompt Engineering Guide:** https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering
+- **Prompt Library:** https://docs.anthropic.com/en/prompt-library
 - **Rate Limits:** https://docs.anthropic.com/en/api/rate-limits
 - **Pricing:** https://www.anthropic.com/pricing
 
 ---
 
-**Fragen?** Öffne ein Issue oder schau in die [README.md](README.md) für allgemeine Infos.
+**Nächste Schritte:**
+1. Teste den neuen Prompt: `python ai_news_curator.py`
+2. Analysiere erste Reports
+3. Passe `prompt_template.txt` an deine Bedürfnisse an
+4. Siehe [README.md](README.md) für allgemeine Infos

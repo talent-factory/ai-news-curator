@@ -61,7 +61,7 @@ jobs:
                 await github.rest.issues.create({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
-                  title: `🎯 Hochpriore AI News - ${new Date().toISOString().split('T')[0]}`,
+                  title: `🎯 Hochprioritäre AI News - ${new Date().toISOString().split('T')[0]}`,
                   body: content,
                   labels: ['ai-news', 'high-priority']
                 });
