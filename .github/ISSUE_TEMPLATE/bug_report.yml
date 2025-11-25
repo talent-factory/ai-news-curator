@@ -1,0 +1,121 @@
+name: 🐛 Bug Report
+description: Melde einen Fehler im AI News Curator
+title: "[Bug]: "
+labels: ["bug", "triage"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Danke für deine Zeit, einen Bug zu melden! Bitte fülle das Formular so detailliert wie möglich aus.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Beschreibung des Bugs
+      description: Was ist das Problem?
+      placeholder: Kurze Beschreibung des Fehlers
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Schritte zur Reproduktion
+      description: Wie können wir den Bug reproduzieren?
+      placeholder: |
+        1. Führe '...' aus
+        2. Klicke auf '...'
+        3. Scrolle zu '...'
+        4. Fehler erscheint
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Erwartetes Verhalten
+      description: Was sollte passieren?
+      placeholder: Beschreibe das erwartete Verhalten
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Aktuelles Verhalten
+      description: Was passiert stattdessen?
+      placeholder: Beschreibe was tatsächlich passiert
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / Error Messages
+      description: Füge relevante Logs oder Error Messages hinzu
+      render: shell
+      placeholder: |
+        Traceback (most recent call last):
+          File "ai_news_curator.py", line 123
+          ...
+
+  - type: dropdown
+    id: python-version
+    attributes:
+      label: Python Version
+      description: Welche Python Version verwendest du?
+      options:
+        - Python 3.13
+        - Python 3.12
+        - Python 3.11
+        - Python 3.10
+        - Python 3.9
+        - Andere (bitte in Kommentar angeben)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Betriebssystem
+      description: Auf welchem OS tritt der Fehler auf?
+      options:
+        - macOS
+        - Linux (Ubuntu/Debian)
+        - Linux (andere)
+        - Windows
+        - GitHub Actions
+        - Andere (bitte in Kommentar angeben)
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: AI News Curator Version
+      description: Welche Version verwendest du? (z.B. v2.0, commit hash, oder "latest")
+      placeholder: v2.0
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Zusätzlicher Kontext
+      description: Gibt es noch etwas, das wir wissen sollten?
+      placeholder: Weitere Details, Screenshots, etc.
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      description: Bitte bestätige folgende Punkte
+      options:
+        - label: Ich habe die Dokumentation durchgelesen
+          required: true
+        - label: Ich habe nach ähnlichen Issues gesucht
+          required: true
+        - label: Ich habe den Bug lokal reproduziert
+          required: false

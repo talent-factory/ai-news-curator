@@ -1,22 +1,78 @@
 # Python-generated files
 __pycache__/
 *.py[oc]
+*.pyo
+*.pyd
 build/
 dist/
 wheels/
 *.egg-info
+*.egg
+.eggs/
 
 # Virtual environments
-.venv
+.venv/
+venv/
+ENV/
+env/
+.virtualenv
 
-# Environment variables
+# Environment variables & Secrets
 .env
+.env.local
+.env.*.local
+*.key
+secrets.json
 
 # Claude settings
 .claude/settings.local.json
 
-# Test logs
+# Test logs & Output
 test_output.log
+*.log
+
+# Coverage reports
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.pytest_cache/
+
+# Type checking
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pytype/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb
+
+# Documentation builds
+docs/_build/
+site/
+
+# Temporary files
+*.tmp
+*.bak
+*.backup
+
+# OS files
+Thumbs.db
+.Spotlight-V100
+.Trashes
 
 # Note: ai_news_digest_*.md Reports werden absichtlich NICHT ignoriert,
 # damit GitHub Actions sie committen kann!

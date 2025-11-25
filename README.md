@@ -1,5 +1,14 @@
 # 🎯 AI News Curator für Teaching
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![GitHub Stars](https://img.shields.io/github/stars/talent-factory/ai-news-curator?style=social)](https://github.com/talent-factory/ai-news-curator/stargazers)
+[![GitHub Forks](https://img.shields.io/github/forks/talent-factory/ai-news-curator?style=social)](https://github.com/talent-factory/ai-news-curator/network/members)
+[![GitHub Issues](https://img.shields.io/github/issues/talent-factory/ai-news-curator)](https://github.com/talent-factory/ai-news-curator/issues)
+[![GitHub Pull Requests](https://img.shields.io/github/issues-pr/talent-factory/ai-news-curator)](https://github.com/talent-factory/ai-news-curator/pulls)
+[![Last Commit](https://img.shields.io/github/last-commit/talent-factory/ai-news-curator)](https://github.com/talent-factory/ai-news-curator/commits/develop)
+[![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+
 > Intelligenter News-Filter speziell für **Software-Entwicklung mit KI** und **KI-Integration in Produkte** Schulungen.
 
 **Version 2.0:** Jetzt mit erweitertem LLM- und CLI-Tool-Fokus! 🚀
@@ -407,19 +416,35 @@ export ANTHROPIC_API_KEY='dein-key'
 
 ## 🤝 Contributing
 
-Dieses Tool ist für **Talent Factory GmbH** entwickelt, aber gerne:
-- Issues für Bugs oder Feature Requests
-- Pull Requests für Verbesserungen
-- Teile deine Anpassungen für andere Schulungs-Kontexte
-- Prompt-Optimierungen für verschiedene Domänen
+Wir freuen uns über Beiträge! 🎉
+
+Dieses Projekt ist Open Source und lädt die Community ein:
+
+- 🐛 **Bug Reports:** Melde Probleme via [GitHub Issues](https://github.com/talent-factory/ai-news-curator/issues)
+- ✨ **Feature Requests:** Schlage neue Features vor
+- 💻 **Pull Requests:** Trage Code bei (siehe [CONTRIBUTING.md](CONTRIBUTING.md))
+- 📚 **Dokumentation:** Verbessere Docs und Guides
+- 🎨 **Prompt Engineering:** Optimiere den Analyse-Prompt
+- 🌍 **Übersetzungen:** Übersetze für andere Sprachen/Domänen
+
+**Branch Protection:**
+- `develop` branch ist geschützt
+- Nur Maintainer können direkt pushen
+- Alle anderen: Fork + Pull Request
+
+Lies unseren [Contributing Guide](CONTRIBUTING.md) für Details!
 
 ## 📄 License
 
-MIT License - Use freely for educational purposes
+MIT License - Use freely for educational and commercial purposes.
+
+See [LICENSE](LICENSE) for full details.
 
 ---
 
-**Entwickelt für:** Talent Factory GmbH - 
-**Kontext:** Software-Entwicklung mit KI & KI-Integration - 
-**Powered by:** Claude API (Anthropic) - 
+**Entwickelt für:** Talent Factory GmbH
+**Kontext:** Software-Entwicklung mit KI & KI-Integration
+**Powered by:** Claude API (Anthropic)
 **Version:** 2.0 - LLM & CLI-Tool Focus
+**License:** MIT - Open Source
+**Community:** [Contributing Guide](CONTRIBUTING.md) | [Code of Conduct](CODE_OF_CONDUCT.md) | [Security Policy](SECURITY.md)

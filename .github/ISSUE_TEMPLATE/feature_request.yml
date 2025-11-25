@@ -1,0 +1,116 @@
+name: ✨ Feature Request
+description: Schlage ein neues Feature für den AI News Curator vor
+title: "[Feature]: "
+labels: ["enhancement", "triage"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Danke für deinen Feature-Vorschlag! Bitte beschreibe deine Idee so detailliert wie möglich.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Welches Problem löst dieses Feature?
+      description: Beschreibe das Problem, das du hast oder das gelöst werden soll
+      placeholder: |
+        Ich möchte gerne ...
+        Aktuell ist es schwierig zu ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Vorgeschlagene Lösung
+      description: Wie stellst du dir die Lösung vor?
+      placeholder: |
+        Das Feature sollte ...
+        Es könnte funktionieren indem ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternative Ansätze
+      description: Hast du andere Lösungsmöglichkeiten in Betracht gezogen?
+      placeholder: |
+        Man könnte alternativ auch ...
+        Ein anderer Ansatz wäre ...
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Feature-Kategorie
+      description: In welche Kategorie fällt das Feature?
+      options:
+        - News-Quellen (neue Quellen hinzufügen)
+        - Prompt Engineering (Analyse-Verbesserungen)
+        - Reports (Output-Format)
+        - Integration (Slack, Discord, etc.)
+        - Automatisierung (GitHub Actions, etc.)
+        - Performance / Optimierung
+        - Dokumentation
+        - Testing
+        - Andere
+    validations:
+      required: true
+
+  - type: textarea
+    id: use-case
+    attributes:
+      label: Use Case / Beispiel
+      description: Wann und wie würdest du das Feature nutzen?
+      placeholder: |
+        Ich würde das Feature nutzen um ...
+        Ein konkretes Beispiel wäre ...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priorität (aus deiner Sicht)
+      description: Wie wichtig ist dieses Feature für dich?
+      options:
+        - Niedrig (nice-to-have)
+        - Mittel (hilfreich)
+        - Hoch (wichtig)
+        - Kritisch (blockiert meine Arbeit)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: contribution
+    attributes:
+      label: Möchtest du an der Implementierung mitwirken?
+      description: Würdest du einen Pull Request einreichen?
+      options:
+        - "Ja, ich würde gerne einen PR einreichen"
+        - "Ja, mit etwas Hilfe könnte ich einen PR einreichen"
+        - "Nein, ich schlage nur die Idee vor"
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Zusätzlicher Kontext
+      description: Screenshots, Links, Beispiele, etc.
+      placeholder: Weitere Details, die hilfreich sein könnten
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      description: Bitte bestätige folgende Punkte
+      options:
+        - label: Ich habe nach ähnlichen Feature Requests gesucht
+          required: true
+        - label: Ich habe die Dokumentation durchgelesen
+          required: true
+        - label: Dieses Feature passt zum Scope des Projekts
+          required: true

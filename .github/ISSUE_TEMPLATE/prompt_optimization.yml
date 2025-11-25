@@ -1,0 +1,106 @@
+name: 🎨 Prompt Optimization
+description: Schlage Verbesserungen für den Analyse-Prompt vor
+title: "[Prompt]: "
+labels: ["prompt-engineering", "enhancement"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Der Prompt (`prompt_template.txt`) ist das Herzstück des Tools!
+        Danke, dass du zur Verbesserung beiträgst!
+
+  - type: dropdown
+    id: prompt-type
+    attributes:
+      label: Art der Optimierung
+      description: Was möchtest du am Prompt verbessern?
+      options:
+        - Bessere Relevanz-Bewertung
+        - Kategorie-Zuordnung verbessern
+        - Neue Technologien / Tools hinzufügen
+        - Klarere Anweisungen
+        - Prompt für andere Domäne anpassen
+        - Performance / Token-Optimierung
+        - Andere
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Was ist aktuell das Problem?
+      description: Welche News werden falsch bewertet? Was funktioniert nicht optimal?
+      placeholder: |
+        Beispiel: "News über Cursor werden oft als 'tools' statt 'cli_tools' kategorisiert"
+        Beispiel: "LLaMA-Updates bekommen nur Score 3 statt 4-5"
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed-change
+    attributes:
+      label: Vorgeschlagene Änderung
+      description: Wie sollte der Prompt geändert werden?
+      placeholder: |
+        Füge folgende Zeile hinzu:
+        "WICHTIG: Cursor, Windsurf, Claude Code sind IMMER cli_tools"
+
+        Oder: Ändere Scoring-Kriterien zu...
+      render: markdown
+    validations:
+      required: true
+
+  - type: textarea
+    id: examples
+    attributes:
+      label: Beispiele
+      description: Zeige Beispiele von News, die aktuell falsch bewertet werden
+      placeholder: |
+        **Vorher:**
+        News: "Cursor 0.42 Released"
+        Score: 3, Kategorie: tools
+
+        **Nachher (gewünscht):**
+        Score: 5, Kategorie: cli_tools
+    validations:
+      required: true
+
+  - type: textarea
+    id: testing
+    attributes:
+      label: Wie hast du die Änderung getestet?
+      description: Hast du die Änderung lokal getestet?
+      placeholder: |
+        - [ ] Lokal mit echten News getestet
+        - [ ] Verschiedene News-Typen getestet
+        - [ ] Keine Regression bei anderen News
+    validations:
+      required: false
+
+  - type: dropdown
+    id: domain
+    attributes:
+      label: Für welche Domäne?
+      description: Ist das für das Standard-Prompt oder eine spezielle Domäne?
+      options:
+        - Standard (Software-Entwicklung mit KI)
+        - Data Science
+        - Enterprise AI
+        - Research / Academic
+        - Andere (bitte in Kommentar angeben)
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      options:
+        - label: Ich habe die Prompt-Engineering-Docs gelesen (CLAUDE.md)
+          required: true
+        - label: Ich habe ähnliche Optimierungen überprüft
+          required: true
+        - label: Meine Änderung ist spezifisch und fokussiert
+          required: true
