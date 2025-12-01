@@ -1,6 +1,6 @@
 # Contributing to AI News Curator
 
-Vielen Dank für dein Interesse, zum AI News Curator beizutragen! 🎉
+Vielen Dank für dein Interesse, zum AI News Curator beizutragen!
 
 Dieses Projekt wurde von **Talent Factory GmbH** entwickelt und ist als Open-Source-Tool für die AI/ML-Community verfügbar.
 
@@ -313,9 +313,9 @@ prompts/
 Falls du versehentlich einen Key committed hast:
 1. Regeneriere den Key sofort
 2. Nutze `git filter-branch` oder BFG Repo-Cleaner
-3. Force Push (nur für eigenen Fork!)
+3. Force Push (nur fuer eigenen Fork!)
 
-Siehe [SECURITY.md](SECURITY.md) für Details.
+Siehe [SECURITY.md](SECURITY.md) fuer Details.
 
 ## 💬 Community
 
@@ -336,7 +336,7 @@ Durch deinen Beitrag stimmst du zu, dass deine Änderungen unter der **MIT Licen
 
 Jeder Beitrag - egal wie klein - hilft der Community!
 
-Besonderer Dank geht an alle Contributors! 🎉
+Besonderer Dank geht an alle Contributors!
 
 ---
 

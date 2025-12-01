@@ -90,7 +90,7 @@ Neu sind **6 Kategorien** statt 4:
 
 #### 5. Verbessertes Scoring mit Beispielen
 
-```
+```text
 5 = Muss sofort in Schulung eingebaut werden
     Beispiele: Breaking Change in Haupt-Tool, neues Claude/GPT Release,
                Cursor/Windsurf Major Update, neue agentic IDE
@@ -117,7 +117,8 @@ code prompt_template.txt
 **Beispiel-Anpassungen:**
 
 **Fokus auf Data Science:**
-```
+
+```yaml
 KONTEXT:
 - Schulungen: "Data Science mit AI-Tools"
 - Zielgruppe: Data Scientists, ML Engineers
@@ -125,7 +126,8 @@ KONTEXT:
 ```
 
 **Fokus auf Enterprise:**
-```
+
+```yaml
 KONTEXT:
 - Schulungen: "Enterprise AI Integration"
 - Zielgruppe: Senior Developers, Architects
@@ -293,12 +295,14 @@ python ai_news_curator.py
 **Problem:** Claude verwendet alte Kategorien (teaching, tools, research, skip)
 
 **Lösung:**
+
 1. Check `prompt_template.txt` enthält neue Kategorien
 2. Füge Beispiele für neue Kategorien hinzu
 3. Mache die Definitionen expliziter
 
 **Beispiel-Verbesserung:**
-```
+
+```yaml
 KATEGORIE (WICHTIG: Nutze die NEUEN Kategorien!):
 - "llm_release" = LLM-Modell Updates (Claude, GPT, Gemini, etc.)
 - "cli_tools" = Terminal/CLI Tools (Cursor, Windsurf, Claude Code, etc.)
@@ -322,7 +326,7 @@ KATEGORIE (WICHTIG: Nutze die NEUEN Kategorien!):
 
 Wenn Claude Kategorien falsch zuordnet:
 
-```
+```text
 BEISPIELE:
 - "Cursor 0.42 Released" → Score 5, Kategorie: cli_tools
   Reasoning: "Wichtiges Update für Haupt-IDE der Studierenden"
@@ -336,7 +340,7 @@ BEISPIELE:
 
 ### 3. Klare Prioritäten setzen
 
-```
+```text
 WICHTIG (Sortierung nach Relevanz):
 1. CLI-basierte Dev-Tools (Cursor, Windsurf, Claude Code) → HÖCHSTE PRIORITÄT
 2. LLM-Releases (Claude, GPT, Gemini) → SEHR HOCH
@@ -347,7 +351,7 @@ WICHTIG (Sortierung nach Relevanz):
 ### 4. Kontext regelmässig updaten
 
 ```bash
-# Alle 3 Monate Tech-Stack aktualisieren
+# Jeden Monat Tech-Stack aktualisieren
 # Neue Tools hinzufügen
 # Veraltete Tools entfernen
 ```
@@ -391,6 +395,45 @@ response = requests.post('http://localhost:11434/api/generate',
 
 **Pros:** Kostenlos, Privacy
 **Cons:** Schlechtere Analyse-Qualität
+
+## 📝 Dokumentations-Standards
+
+### Schweizer Hochdeutsch
+
+**Schreibweise in allen Markdown-Dateien:**
+- ✅ **RICHTIG:** ß → ss (z.B. "regelmässig", "gross", "Grösse")
+- ✅ **RICHTIG:** Umlaute ä, ö, ü bleiben erhalten
+- ❌ **FALSCH:** ä → ae, ö → oe, ü → ue (verwende NICHT diese Konvertierung!)
+
+**Beispiele:**
+- ✅ "für" nicht ❌ "fuer"
+- ✅ "Änderungen" nicht ❌ "Aenderungen"
+- ✅ "verfügbar" nicht ❌ "verfuegbar"
+- ✅ "regelmässig" nicht ❌ "regelmäßig"
+
+### Markdown-Formatierung
+
+**Code-Blocks:**
+- Immer mit Language-Identifiers: `bash`, `python`, `yaml`, `text`
+- Beispiel: ` ```python ` nicht nur ` ``` `
+
+**Heading-Hierarchie:**
+- Korrekte Struktur: H1 → H2 → H3 (keine Sprünge)
+- Ein H1 pro Datei (Titel)
+
+**Listen-Formatierung:**
+- Unordered Lists: `-` (konsistent)
+- Ordered Lists: `1.`, `2.`, `3.`
+- Leerzeile vor Listen für bessere Lesbarkeit
+
+**Spacing:**
+- Eine Leerzeile zwischen Abschnitten
+- Keine doppelten Leerzeilen
+- Leerzeile vor/nach Code-Blocks
+
+**Links:**
+- Markdown-Format: `[Text](URL)`
+- Interne Links: `[README](README.md)`
 
 ## 🎓 Weiterführende Links
 

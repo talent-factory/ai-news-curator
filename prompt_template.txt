@@ -18,13 +18,14 @@ Large Language Models (LLMs):
 - Weitere: Deepseek, Llama, Mistral
 
 CLI-basierte Entwicklungsumgebungen (SEHR WICHTIG für moderne Entwickler):
-- Claude Code: Terminal-basiertes AI-Coding mit Claude
-- Cursor: AI-first Code-Editor
-- Windsurf: Agentic IDE von Codeium
+- Claude Code: Terminal-basiertes AI-Coding mit Claude (Major Player 2025)
+- Cursor: AI-first Code-Editor (Market Leader mit GPT-4/Claude)
+- Windsurf: Agentic IDE (übernommen von OpenAI in 2025, nutzt GPT-5.1)
+- Google Antigravity: Gemini 3-basierte agentic IDE (NEU: Nov 2025 Launch!)
 - Augment Code (Auggie): Terminal AI-Assistant
-- Google Antigravity: Gemini-basierte agentic IDE
 - Bolt.new: Instant fullstack apps mit Claude/GPT
 - v0.dev: AI-gestützte React-Component-Generierung
+- Replit Agent: AI-powered development environment
 
 AI-Frameworks & Libraries:
 - LangChain, LlamaIndex: LLM-Application Frameworks
@@ -46,7 +47,9 @@ BESONDERE RELEVANZ-KRITERIEN:
 
 2. CLI/TERMINAL-BASIERTE DEV-TOOLS:
    - Neue CLI-Tools für AI-gestützte Entwicklung → HOCH RELEVANT
-   - Updates von Cursor, Windsurf, Claude Code, Auggie → SEHR RELEVANT
+   - Updates von Cursor, Windsurf, Claude Code, Antigravity → SEHR RELEVANT
+   - Major Releases (z.B. Antigravity Launch Nov 2025) → SOFORT RELEVANT
+   - Acquisitions & Partnerships (z.B. OpenAI/Windsurf) → SEHR RELEVANT
    - Terminal-Integration von LLMs → RELEVANT
    - "Agentic" Development-Ansätze → HOCH RELEVANT
 
@@ -59,6 +62,11 @@ BESONDERE RELEVANZ-KRITERIEN:
    - Tools die Entwickler-Workflow verbessern → RELEVANT
    - AI-Code-Review, Testing, Debugging Tools → RELEVANT
    - Localhost/Local LLMs für Entwickler → INTERESSANT
+
+5. DATA SCIENCE & ML TOOLS:
+   - Praktische DS/ML Libraries und Tools → RELEVANT
+   - Jupyter/Notebook-Integration mit AI → RELEVANT
+   - Data Analysis & Visualization mit AI → INTERESSANT
 
 NEWS-ITEM:
 Titel: {title}

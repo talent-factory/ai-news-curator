@@ -35,10 +35,24 @@ class AINewsCurator:
     def __init__(self, anthropic_api_key: str, prompt_template_path: str = "prompt_template.txt"):
         self.client = anthropic.Anthropic(api_key=anthropic_api_key)
         self.sources = {
-            'anthropic_blog': 'https://www.anthropic.com/news',
+            # Official Blogs & News
+            'anthropic_blog': 'https://www.anthropic.com/news/rss',
             'openai_blog': 'https://openai.com/blog/rss',
             'google_ai': 'https://blog.google/technology/ai/rss',
-            'hacker_news_ai': 'https://hnrss.org/newest?q=AI+OR+LLM+OR+Claude+OR+GPT',
+            'google_developers': 'https://developers.googleblog.com/feeds/posts/default',
+
+            # AI News Aggregators
+            'hacker_news_ai': 'https://hnrss.org/newest?q=AI+OR+LLM+OR+Claude+OR+GPT+OR+Cursor+OR+Windsurf',
+            'last_week_in_ai': 'https://lastweekin.ai/feed',
+            'daily_dose_ds': 'https://blog.dailydoseofds.com/feed',
+
+            # Developer News
+            'infoq_llm': 'https://www.infoq.com/llms/rss',
+            'thenewstack': 'https://thenewstack.io/blog/feed/',
+
+            # Tech News
+            'techcrunch_ai': 'https://techcrunch.com/category/artificial-intelligence/feed/',
+            'venturebeat_ai': 'https://venturebeat.com/category/ai/feed/',
         }
 
         # Load prompt template from file
@@ -84,6 +98,29 @@ WICHTIG: Antworte AUSSCHLIESSLICH mit gültigem JSON. Kein Text davor oder danac
 Format:
 {{"relevance_score": 3, "category": "tools", "reasoning": "Deine Begründung hier"}}"""
 
+    def load_previous_news_urls(self, days_back: int = 7) -> set:
+        """Lädt URLs aus vergangenen Reports um Duplikate zu vermeiden"""
+        seen_urls = set()
+        import glob
+
+        # Finde alle Report-Dateien
+        report_files = glob.glob("ai_news_digest_*.md")
+        report_files.sort(reverse=True)  # Neueste zuerst
+
+        # Parse die letzten N Reports
+        for report_file in report_files[:days_back]:
+            try:
+                with open(report_file, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                    # Extrahiere URLs aus Markdown-Links: [text](url)
+                    import re
+                    urls = re.findall(r'\[Link\]\((https?://[^\)]+)\)', content)
+                    seen_urls.update(urls)
+            except Exception as e:
+                continue
+
+        return seen_urls
+
     def extract_json_from_text(self, text: str) -> Optional[Dict]:
         """Extrahiert JSON aus Text, auch wenn Claude Text drum herum schreibt"""
         # Versuche zuerst direktes JSON parsing
@@ -108,64 +145,127 @@ Format:
     def fetch_news(self, hours_back: int = 24) -> List[Dict]:
         """Sammelt News von verschiedenen Quellen"""
         news_items = []
+
+        # Load URLs from previous reports to avoid duplicates
+        print("🔍 Checking for duplicates in previous reports...")
+        seen_urls = self.load_previous_news_urls(days_back=7)
+        print(f"   Found {len(seen_urls)} URLs in previous reports")
+
         cutoff_date = datetime.now() - timedelta(hours=hours_back)
-        
-        # Hacker News AI-relevante Posts
-        try:
-            hn_feed = feedparser.parse(self.sources['hacker_news_ai'])
-            for entry in hn_feed.entries[:20]:  # Top 20
-                pub_date = datetime(*entry.published_parsed[:6])
-                if pub_date > cutoff_date:
-                    news_items.append({
-                        'title': entry.title,
-                        'url': entry.link,
-                        'source': 'Hacker News',
-                        'published': pub_date.isoformat(),
-                        'summary': entry.get('summary', '')[:500]
-                    })
-        except Exception as e:
-            print(f"Error fetching HN: {e}")
+
+        # Fetch from all RSS feeds
+        print(f"📡 Fetching from {len(self.sources)} RSS sources...")
+        for source_name, feed_url in self.sources.items():
+            try:
+                feed = feedparser.parse(feed_url)
+                count = 0
+                for entry in feed.entries[:30]:  # Top 30 per source
+                    try:
+                        # Parse publication date
+                        if hasattr(entry, 'published_parsed') and entry.published_parsed:
+                            pub_date = datetime(*entry.published_parsed[:6])
+                        elif hasattr(entry, 'updated_parsed') and entry.updated_parsed:
+                            pub_date = datetime(*entry.updated_parsed[:6])
+                        else:
+                            # If no date, use current time
+                            pub_date = datetime.now()
+
+                        # Check if recent enough
+                        if pub_date < cutoff_date:
+                            continue
+
+                        # Get URL and check for duplicates
+                        url = entry.get('link', '')
+                        if not url or url in seen_urls:
+                            continue
+
+                        seen_urls.add(url)
+
+                        # Extract summary
+                        summary = entry.get('summary', entry.get('description', ''))
+                        if not summary:
+                            summary = entry.get('content', [{}])[0].get('value', '') if entry.get('content') else ''
+
+                        # Clean HTML tags from summary
+                        import re
+                        summary = re.sub(r'<[^>]+>', '', summary)
+
+                        news_items.append({
+                            'title': entry.title,
+                            'url': url,
+                            'source': source_name.replace('_', ' ').title(),
+                            'published': pub_date.isoformat(),
+                            'summary': summary[:500]
+                        })
+                        count += 1
+                    except Exception as e:
+                        # Skip individual entry errors
+                        continue
+
+                if count > 0:
+                    print(f"  ✓ {source_name}: {count} items")
+            except Exception as e:
+                print(f"  ✗ {source_name}: {str(e)[:50]}")
         
         # GitHub Trending
+        print(f"📡 Fetching GitHub trending repositories...")
         try:
             gh_url = "https://api.github.com/search/repositories"
             params = {
-                'q': 'ai OR llm OR claude OR cursor created:>=' + cutoff_date.strftime('%Y-%m-%d'),
+                'q': 'ai OR llm OR claude OR cursor OR windsurf OR antigravity created:>=' + cutoff_date.strftime('%Y-%m-%d'),
                 'sort': 'stars',
                 'order': 'desc',
-                'per_page': 10
+                'per_page': 15
             }
             response = requests.get(gh_url, params=params)
             if response.ok:
+                gh_count = 0
                 for repo in response.json().get('items', []):
-                    news_items.append({
-                        'title': f"📦 {repo['full_name']}: {repo['description'][:100]}",
-                        'url': repo['html_url'],
-                        'source': 'GitHub Trending',
-                        'published': repo['created_at'],
-                        'summary': repo['description'] or ''
-                    })
+                    url = repo['html_url']
+                    if url not in seen_urls:
+                        seen_urls.add(url)
+                        news_items.append({
+                            'title': f"📦 {repo['full_name']}: {repo['description'][:100] if repo['description'] else 'No description'}",
+                            'url': url,
+                            'source': 'GitHub Trending',
+                            'published': repo['created_at'],
+                            'summary': repo['description'] or 'No description available'
+                        })
+                        gh_count += 1
+                print(f"  ✓ GitHub: {gh_count} repos")
+            else:
+                print(f"  ✗ GitHub: HTTP {response.status_code}")
         except Exception as e:
-            print(f"Error fetching GitHub: {e}")
+            print(f"  ✗ GitHub: {str(e)[:50]}")
         
         # Reddit r/LocalLLaMA top posts
+        print(f"📡 Fetching Reddit r/LocalLLaMA...")
         try:
-            reddit_url = "https://www.reddit.com/r/LocalLLaMA/top.json?t=day&limit=10"
-            headers = {'User-Agent': 'AI-News-Curator/1.0'}
+            reddit_url = "https://www.reddit.com/r/LocalLLaMA/top.json?t=day&limit=15"
+            headers = {'User-Agent': 'AI-News-Curator/2.0'}
             response = requests.get(reddit_url, headers=headers)
             if response.ok:
+                reddit_count = 0
                 for post in response.json().get('data', {}).get('children', []):
                     data = post['data']
-                    news_items.append({
-                        'title': data['title'],
-                        'url': f"https://reddit.com{data['permalink']}",
-                        'source': 'Reddit r/LocalLLaMA',
-                        'published': datetime.fromtimestamp(data['created_utc']).isoformat(),
-                        'summary': data.get('selftext', '')[:500]
-                    })
+                    url = f"https://reddit.com{data['permalink']}"
+                    if url not in seen_urls:
+                        seen_urls.add(url)
+                        news_items.append({
+                            'title': data['title'],
+                            'url': url,
+                            'source': 'Reddit r/LocalLLaMA',
+                            'published': datetime.fromtimestamp(data['created_utc']).isoformat(),
+                            'summary': data.get('selftext', '')[:500]
+                        })
+                        reddit_count += 1
+                print(f"  ✓ Reddit: {reddit_count} posts")
+            else:
+                print(f"  ✗ Reddit: HTTP {response.status_code}")
         except Exception as e:
-            print(f"Error fetching Reddit: {e}")
-        
+            print(f"  ✗ Reddit: {str(e)[:50]}")
+
+        print(f"\n✅ Total fetched: {len(news_items)} unique items from {len(self.sources) + 2} sources")
         return news_items
     
     def analyze_relevance(self, news_items: List[Dict]) -> List[NewsItem]:
