@@ -96,7 +96,8 @@ Ein intelligenter AI News Curator, der:
 ```
 
 **Beispiele von Claude-Analysen:**
-```
+
+```text
 Input: "Claude 3.7 Opus Released with 500K Context Window"
 Claude analysiert:
 - Relevanz: 5/5 (Major LLM Release, direkt relevant)
@@ -236,7 +237,7 @@ Füge hinzu:
 
 ## 📊 Output Format (NEU v2.0)
 
-```markdown
+```text
 # 🎯 AI News Digest für Teaching
 **Datum:** 2025-11-25
 
@@ -312,17 +313,21 @@ Siehe [CLAUDE.md](CLAUDE.md) für detaillierte Anleitung zum Prompt Engineering.
 ## 🎓 Use Cases für Teaching
 
 ### 1. Wöchentliche "What's New" Session
+
 ```bash
 # Letzten 7 Tage
 python ai_news_curator.py  # Anpassen: hours_back=168
 ```
-→ Zeige Studierenden die wichtigsten Updates der Woche
+
+Zeige Studierenden die wichtigsten Updates der Woche
 
 ### 2. Kursinhalt aktualisieren
+
 - High-Priority Items (Score 5) → Sofort in Slides einbauen
 - Medium-Priority (Score 3-4) → Für nächstes Semester merken
 
 ### 3. Student Research Topics
+
 - Research-Category Items → Thesis/Projekt-Themen
 
 ## 🔧 Erweiterte Anpassungen
@@ -331,8 +336,8 @@ python ai_news_curator.py  # Anpassen: hours_back=168
 
 ```python
 # In ai_news_curator.py, Methode fetch_news()
-
 # Beispiel: Eigener RSS Feed
+
 custom_feed = feedparser.parse('https://your-blog.com/rss')
 for entry in custom_feed.entries:
     news_items.append({
@@ -381,27 +386,32 @@ notion = Client(auth=os.getenv("NOTION_TOKEN"))
 ## 🛠️ Troubleshooting
 
 ### "ANTHROPIC_API_KEY nicht gesetzt"
+
 ```bash
 echo $ANTHROPIC_API_KEY  # Sollte Key zeigen
 export ANTHROPIC_API_KEY='dein-key'
 ```
 
 ### Keine News gefunden
+
 - Prüfe Internetverbindung
 - Manche Feeds können temporär down sein
 - Erhöhe `hours_back` Parameter
 
 ### GitHub Action läuft nicht
+
 - Prüfe: Repository Settings → Actions → "Allow all actions"
 - Secret korrekt gesetzt?
 - Workflow-File in `.github/workflows/` ?
 
 ### Manueller Workflow-Trigger verwendet alte Code-Version
+
 **Problem:** Du hast Code geändert, aber der manuelle Run verwendet die alte Version.
 
 **Ursache:** GitHub Actions cached Workflow-Definitionen. Beim manuellen Trigger kann GitHub eine alte Branch-Referenz verwenden.
 
 **Lösung:**
+
 ```bash
 # Option 1: Warte 2-3 Minuten nach dem Push, dann triggern
 
@@ -414,6 +424,7 @@ gh workflow run daily_news.yml --ref develop
 ## 📝 CHANGELOG v2.0
 
 ### 🆕 Neue Features
+
 - ✅ **Externe Prompt-Datei:** `prompt_template.txt` für einfache Wartung
 - ✅ **Erweiterte LLM-Coverage:** Claude, GPT, Gemini, o1, Deepseek, Llama, Mistral
 - ✅ **CLI-Tool-Fokus:** Cursor, Windsurf, Claude Code, Auggie, Antigravity, Bolt.new, v0.dev
@@ -422,17 +433,20 @@ gh workflow run daily_news.yml --ref develop
 - ✅ **Fallback-Prompt:** Automatisches Fallback wenn Template fehlt
 
 ### 🔧 Technische Verbesserungen
+
 - Prompt-Template in separater Datei (bessere Wartbarkeit)
 - Erweiterte Relevanz-Kriterien für LLMs und CLI-Tools
 - Verbesserte Report-Formatierung mit Emojis
 - Kategorie-Tracking und Statistiken
 
 ### 📚 Dokumentation
+
 - Komplett überarbeitetes [CLAUDE.md](CLAUDE.md) mit Prompt Engineering Guide
 - Aktualisiertes [README.md](README.md) mit v2.0 Features
 - Beispiele für neue Kategorien und Bewertungen
 
 ### 💰 Kosten
+
 - Leicht höhere API-Kosten durch längeren Prompt (~$0.08/Tag statt $0.06/Tag)
 - Immer noch sehr günstig: ~$2.40/Monat
 
@@ -448,7 +462,7 @@ gh workflow run daily_news.yml --ref develop
 
 ## 🤝 Contributing
 
-Wir freuen uns über Beiträge! 🎉
+Wir freuen uns über Beiträge!
 
 Dieses Projekt ist Open Source und lädt die Community ein:
 
@@ -460,6 +474,7 @@ Dieses Projekt ist Open Source und lädt die Community ein:
 - 🌍 **Übersetzungen:** Übersetze für andere Sprachen/Domänen
 
 **Branch Protection:**
+
 - `develop` branch ist geschützt
 - Nur Maintainer können direkt pushen
 - Alle anderen: Fork + Pull Request

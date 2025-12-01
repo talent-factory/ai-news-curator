@@ -2,7 +2,7 @@
 
 ## Unser Versprechen
 
-Im Interesse einer offenen und einladenden Umgebung verpflichten wir uns als Mitwirkende und Maintainer, die Teilnahme an unserem Projekt und unserer Community zu einer belästigungsfreien Erfahrung für alle zu machen - unabhängig von Alter, Körpergröße, Behinderung, ethnischer Zugehörigkeit, Geschlechtsmerkmalen, Geschlechtsidentität und -ausdruck, Erfahrungsniveau, Bildung, sozioökonomischem Status, Nationalität, persönlichem Aussehen, Rasse, Religion oder sexueller Identität und Orientierung.
+Im Interesse einer offenen und einladenden Umgebung verpflichten wir uns als Mitwirkende und Maintainer, die Teilnahme an unserem Projekt und unserer Community zu einer belästigungsfreien Erfahrung für alle zu machen - unabhängig von Alter, Körpergrösse, Behinderung, ethnischer Zugehörigkeit, Geschlechtsmerkmalen, Geschlechtsidentität und -ausdruck, Erfahrungsniveau, Bildung, sozioökonomischem Status, Nationalität, persönlichem Aussehen, Rasse, Religion oder sexueller Identität und Orientierung.
 
 ## Unsere Standards
 
@@ -24,7 +24,7 @@ Beispiele für inakzeptables Verhalten:
 
 ## Unsere Verantwortung
 
-Projekt-Maintainer sind dafür verantwortlich, die Standards für akzeptables Verhalten zu klären und werden angemessene und faire Korrekturmaßnahmen als Reaktion auf inakzeptables Verhalten ergreifen.
+Projekt-Maintainer sind dafür verantwortlich, die Standards für akzeptables Verhalten zu klären und werden angemessene und faire Korrekturmassnahmen als Reaktion auf inakzeptables Verhalten ergreifen.
 
 Projekt-Maintainer haben das Recht und die Verantwortung, Kommentare, Commits, Code, Wiki-Bearbeitungen, Issues und andere Beiträge zu entfernen, zu bearbeiten oder abzulehnen, die nicht mit diesem Code of Conduct übereinstimmen, oder um vorübergehend oder dauerhaft Mitwirkende für Verhaltensweisen zu sperren, die sie als unangemessen, bedrohlich, beleidigend oder schädlich erachten.
 
@@ -40,8 +40,10 @@ Projekt-Maintainer, die den Code of Conduct nicht in gutem Glauben befolgen oder
 
 ## Attribution
 
-Dieser Code of Conduct ist angepasst vom [Contributor Covenant](https://www.contributor-covenant.org), Version 2.1, verfügbar unter https://www.contributor-covenant.org/version/2/1/code_of_conduct.html
+Dieser Code of Conduct ist angepasst vom [Contributor Covenant](https://www.contributor-covenant.org), Version 2.1, verfügbar unter https://www.contributor-covenant.org/version/2/1/code_of_conduct.html.
 
 Community Impact Guidelines wurden inspiriert von [Mozilla's code of conduct enforcement ladder](https://github.com/mozilla/diversity).
 
 Für Antworten auf häufig gestellte Fragen zu diesem Code of Conduct siehe https://www.contributor-covenant.org/faq. Übersetzungen sind verfügbar unter https://www.contributor-covenant.org/translations.
+
+

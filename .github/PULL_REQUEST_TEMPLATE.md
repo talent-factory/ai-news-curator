@@ -7,7 +7,7 @@
 <!-- Warum ist diese Änderung notwendig? Welches Problem löst sie? -->
 <!-- Referenziere Issues mit #123 -->
 
-Closes #
+Closes #<!-- Issue Number -->
 
 ## 🔄 Art der Änderung
 
@@ -39,7 +39,7 @@ Closes #
 
 <!-- Füge Screenshots für UI-Änderungen oder Logs für Bug Fixes hinzu -->
 
-```
+```text
 Füge relevante Logs hier ein
 ```
 

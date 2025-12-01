@@ -74,5 +74,5 @@ Thumbs.db
 .Spotlight-V100
 .Trashes
 
-# Note: ai_news_digest_*.md Reports werden absichtlich NICHT ignoriert,
-# damit GitHub Actions sie committen kann!
+# Local test reports
+ai_news_digest_*.md

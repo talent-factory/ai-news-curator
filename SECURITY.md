@@ -31,7 +31,7 @@ Wir bieten Security Updates für folgende Versionen:
 
 - **Bestätigung:** Innerhalb von 48 Stunden
 - **Erste Einschätzung:** Innerhalb von 7 Tagen
-- **Updates:** Regelmäßige Updates zum Status
+- **Updates:** Regelmässige Updates zum Status
 - **Fix & Disclosure:** Koordinierte Veröffentlichung nach Fix
 
 ### Responsible Disclosure
@@ -53,13 +53,15 @@ Wir bitten dich:
 ### API Keys schützen
 
 **DO:**
+
 - ✅ API Keys in `.env` Files speichern
 - ✅ Environment Variables nutzen
 - ✅ `.env` in `.gitignore` haben
 - ✅ Unterschiedliche Keys für Dev/Prod
-- ✅ Keys regelmäßig rotieren
+- ✅ Keys regelmässig rotieren
 
 **DON'T:**
+
 - ❌ Keys in Code committed
 - ❌ Keys in Config-Files
 - ❌ Keys in Screenshots/Logs
@@ -108,6 +110,7 @@ git push origin --force --all
 **Risiko:** API Keys könnten in Logs auftauchen
 
 **Mitigation:**
+
 - Script loggt niemals Keys
 - Fehler-Messages enthalten keine Keys
 - GitHub Actions maskiert Secrets automatisch
@@ -117,7 +120,8 @@ git push origin --force --all
 **Risiko:** Abhängigkeiten könnten Sicherheitslücken haben
 
 **Mitigation:**
-- Regelmäßige `pip install --upgrade`
+
+- Regelmässige `pip install --upgrade`
 - Dependabot aktiviert (empfohlen)
 - Security Advisories beachten
 
@@ -126,6 +130,7 @@ git push origin --force --all
 **Risiko:** Böswillige News könnten versuchen, den Prompt zu manipulieren
 
 **Mitigation:**
+
 - Prompt-Template verwendet `{placeholder}` statt f-strings
 - Keine Execution von Code aus News
 - Input-Längen sind begrenzt
@@ -135,6 +140,7 @@ git push origin --force --all
 **Risiko:** Zu viele API-Calls könnten Account blockieren
 
 **Mitigation:**
+
 - Built-in Rate Limiting (300ms zwischen Calls)
 - Fehler-Handling bei Rate Limit Errors
 - Configurable `hours_back` Parameter
@@ -150,7 +156,7 @@ git push origin --force --all
 
 ### Geplante Audits
 
-- Regelmäßige Dependency Updates
+- Regelmässige Dependency Updates
 - Community Security Reviews
 
 ## 📚 Security Resources

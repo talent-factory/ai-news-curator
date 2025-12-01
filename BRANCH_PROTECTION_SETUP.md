@@ -2,7 +2,7 @@
 
 ## 🔒 Branch Protection Regeln
 
-Der `develop` branch ist geschützt, um die Code-Qualität sicherzustellen und sicherzustellen, dass nur geprüfte Änderungen eingehen.
+Der `develop` branch ist geschützt, um die Code-Qualität sicherzustellen und nur geprüfte Änderungen zu akzeptieren.
 
 ## ⚙️ Setup (für Repository Owner)
 
@@ -20,19 +20,22 @@ Der `develop` branch ist geschützt, um die Code-Qualität sicherzustellen und s
 3. **Aktiviere folgende Settings:**
 
    **Require a pull request before merging:**
+
    - ✅ Aktivieren
    - Require approvals: 1
    - ✅ Dismiss stale pull request approvals when new commits are pushed
    - ✅ Require review from Code Owners (optional, wenn CODEOWNERS file existiert)
 
    **Require status checks to pass before merging:**
-   - ⬜ Optional - aktivieren wenn CI/CD Tests existieren
+   - ⬜ Optional (aktivieren wenn CI/CD Tests existieren)
    - Status checks: (später hinzufügen wenn Tests existieren)
+
 
    **Require conversation resolution before merging:**
    - ✅ Aktivieren (alle Kommentare müssen resolved sein)
 
    **Do not allow bypassing the above settings:**
+
    - ⬜ NICHT aktivieren (Owner soll weiterhin direkt pushen können)
 
    **Restrict who can push to matching branches:**
@@ -129,7 +132,7 @@ git push origin feature/meine-feature
 ## 📋 Pull Request Review Process
 
 1. **Contributor erstellt PR**
-   - PR wird automatisch auf develop gemerged-ready geprüft
+   - PR wird automatisch auf Merge-Readiness überprüft
    - Maintainer wird benachrichtigt
 
 2. **Code Review durch Maintainer**
