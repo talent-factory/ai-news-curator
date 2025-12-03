@@ -76,3 +76,5 @@ Thumbs.db
 
 # Local test reports
 ai_news_digest_*.md
+# Augment local rules
+.augment/
