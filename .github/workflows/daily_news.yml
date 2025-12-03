@@ -7,7 +7,6 @@ on:
   workflow_dispatch:  # Manuelles Triggern möglich
 
 permissions:
-  contents: write
   issues: write
 
 jobs:
@@ -33,18 +32,8 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
           python ai_news_curator.py
-      
-      - name: Commit and Push Report
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add ai_news_digest_*.md
-          if ! git diff --quiet && git diff --staged --quiet; then
-            git commit -m "📰 Daily AI News Digest $(date +'%Y-%m-%d')"
-            git push
-          fi
-      
-      - name: Create Issue on High Priority Items
+
+      - name: Create Issue with News Digest
         if: success()
         uses: actions/github-script@v7
         with:
@@ -52,18 +41,22 @@ jobs:
             const fs = require('fs');
             const today = new Date().toISOString().split('T')[0].replace(/-/g, '');
             const filename = `ai_news_digest_${today}.md`;
-            
+
             if (fs.existsSync(filename)) {
               const content = fs.readFileSync(filename, 'utf8');
-              
-              // Check if there are high priority items
-              if (content.includes('## 🔥 Sofort relevant')) {
-                await github.rest.issues.create({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  title: `🎯 Hochprioritäre AI News - ${new Date().toISOString().split('T')[0]}`,
-                  body: content,
-                  labels: ['ai-news', 'high-priority']
-                });
-              }
+
+              // Determine priority based on content
+              const hasHighPriority = content.includes('## 🔥 Sofort relevant');
+              const labels = hasHighPriority ? ['ai-news', 'high-priority'] : ['ai-news'];
+              const titlePrefix = hasHighPriority ? '🎯 Hochprioritäre' : '📰';
+
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: `${titlePrefix} AI News - ${new Date().toISOString().split('T')[0]}`,
+                body: content,
+                labels: labels
+              });
+            } else {
+              console.log(`File ${filename} not found`);
             }
