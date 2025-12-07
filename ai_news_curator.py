@@ -98,28 +98,32 @@ WICHTIG: Antworte AUSSCHLIESSLICH mit gültigem JSON. Kein Text davor oder danac
 Format:
 {{"relevance_score": 3, "category": "tools", "reasoning": "Deine Begründung hier"}}"""
 
-    def load_previous_news_urls(self, days_back: int = 7) -> set:
-        """Lädt URLs aus vergangenen Reports um Duplikate zu vermeiden"""
+    def load_previous_news(self, days_back: int = 7) -> (set, list):
+        """Loads URLs and titles from past reports to avoid duplicates."""
         seen_urls = set()
+        seen_titles = []
         import glob
+        import re
 
-        # Finde alle Report-Dateien
+        # Find all report files
         report_files = glob.glob("ai_news_digest_*.md")
-        report_files.sort(reverse=True)  # Neueste zuerst
+        report_files.sort(reverse=True)
 
-        # Parse die letzten N Reports
+        # Parse the last N reports
         for report_file in report_files[:days_back]:
             try:
                 with open(report_file, 'r', encoding='utf-8') as f:
                     content = f.read()
-                    # Extrahiere URLs aus Markdown-Links: [text](url)
-                    import re
+                    # Extract URLs from Markdown links: [Link](url)
                     urls = re.findall(r'\[Link\]\((https?://[^\)]+)\)', content)
                     seen_urls.update(urls)
+                    # Extract titles from Markdown headers: ### emoji Title
+                    titles = re.findall(r'### [^\s]+ (.+)', content)
+                    seen_titles.extend([title.strip() for title in titles])
             except Exception as e:
                 continue
 
-        return seen_urls
+        return seen_urls, seen_titles
 
     def extract_json_from_text(self, text: str) -> Optional[Dict]:
         """Extrahiert JSON aus Text, auch wenn Claude Text drum herum schreibt"""
@@ -142,14 +146,14 @@ Format:
 
         return None
     
-    def fetch_news(self, hours_back: int = 24) -> List[Dict]:
+    def fetch_news(self, hours_back: int = 24) -> (List[Dict], list):
         """Sammelt News von verschiedenen Quellen"""
         news_items = []
 
         # Load URLs from previous reports to avoid duplicates
         print("🔍 Checking for duplicates in previous reports...")
-        seen_urls = self.load_previous_news_urls(days_back=7)
-        print(f"   Found {len(seen_urls)} URLs in previous reports")
+        seen_urls, seen_titles = self.load_previous_news(days_back=7)
+        print(f"   Found {len(seen_urls)} URLs and {len(seen_titles)} titles in previous reports")
 
         cutoff_date = datetime.now() - timedelta(hours=hours_back)
 
@@ -266,25 +270,29 @@ Format:
             print(f"  ✗ Reddit: {str(e)[:50]}")
 
         print(f"\n✅ Total fetched: {len(news_items)} unique items from {len(self.sources) + 2} sources")
-        return news_items
+        return news_items, seen_titles
     
-    def analyze_relevance(self, news_items: List[Dict]) -> List[NewsItem]:
+    def analyze_relevance(self, news_items: List[Dict], seen_titles: list) -> List[NewsItem]:
         """Nutzt Claude API um Relevanz zu bewerten"""
 
         filtered_items = []
         success_count = 0
         error_count = 0
 
+        # Format seen_titles for the prompt
+        seen_titles_text = "\n".join(f"- {title}" for title in seen_titles)
+
         for idx, item in enumerate(news_items, 1):
             # Rate limiting: Kleine Pause zwischen Requests
             if idx > 1:
-                time.sleep(0.3)  # 300ms zwischen Requests
+                time.sleep(0.3)
 
             # Use template and fill in the news item details
             prompt = self.prompt_template.format(
                 title=item['title'],
                 source=item['source'],
-                summary=item['summary'][:300]
+                summary=item['summary'][:300],
+                recent_news=seen_titles_text
             )
 
             try:
@@ -423,11 +431,11 @@ Format:
     def run(self, hours_back: int = 24) -> str:
         """Hauptfunktion - führt gesamten Workflow aus"""
         print(f"🔍 Sammle News der letzten {hours_back} Stunden...")
-        news_items = self.fetch_news(hours_back)
+        news_items, seen_titles = self.fetch_news(hours_back)
         print(f"✅ {len(news_items)} Items gefunden")
         
         print("🤖 Analysiere Relevanz mit Claude...")
-        analyzed_items = self.analyze_relevance(news_items)
+        analyzed_items = self.analyze_relevance(news_items, seen_titles)
         print(f"✅ {len(analyzed_items)} Items analysiert")
         
         print("📝 Generiere Report...")
