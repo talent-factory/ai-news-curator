@@ -68,13 +68,16 @@ BESONDERE RELEVANZ-KRITERIEN:
    - Jupyter/Notebook-Integration mit AI → RELEVANT
    - Data Analysis & Visualization mit AI → INTERESSANT
 
+BEREITS GEMELDETE NEWS (LETZTE 7 TAGE):
+{recent_news}
+
 NEWS-ITEM:
 Titel: {title}
 Quelle: {source}
 Zusammenfassung: {summary}
 
 AUFGABE:
-Bewerte die Relevanz für die Schulungen:
+Bewerte die Relevanz für die Schulungen. PRÜFE ZUERST, ob das Thema bereits in den oben gemeldeten News vorkommt. Wenn ja, score = 1 und category = "skip".
 
 RELEVANZ-SCORE (1-5):
 5 = Muss sofort in Schulung eingebaut werden
