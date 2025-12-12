@@ -1,0 +1,100 @@
+name: Spam Comment Moderation
+
+on:
+  issue_comment:
+    types: [created]
+  issues:
+    types: [opened]
+
+permissions:
+  issues: write
+
+jobs:
+  moderate-spam:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check for spam patterns
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const comment = context.payload.comment;
+            const issue = context.payload.issue;
+
+            // Only process if this is a comment (not issue creation)
+            if (!comment) {
+              console.log('No comment to moderate (issue creation event)');
+              return;
+            }
+
+            const commentBody = comment.body.toLowerCase();
+            const commentAuthor = comment.user.login;
+
+            // Check if commenter is a collaborator
+            try {
+              const { data: permission } = await github.rest.repos.getCollaboratorPermissionLevel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                username: commentAuthor
+              });
+
+              if (['admin', 'write', 'maintain'].includes(permission.permission)) {
+                console.log(`User ${commentAuthor} is a collaborator, skipping spam check`);
+                return;
+              }
+            } catch (error) {
+              console.log(`Could not check permissions for ${commentAuthor}`);
+            }
+
+            // Spam detection patterns
+            const spamPatterns = [
+              // Common spam keywords
+              /\b(viagra|cialis|casino|lottery|winner|congratulations)\b/i,
+              /\b(click here|buy now|limited offer|act now)\b/i,
+              /\b(make money|work from home|earn \$|get paid)\b/i,
+
+              // Suspicious links
+              /(bit\.ly|tinyurl|goo\.gl|t\.co)\/[a-z0-9]+/i,
+
+              // Excessive links (3+ links in a short comment)
+              /(https?:\/\/[^\s]+.*){3,}/i,
+
+              // Cryptocurrency spam
+              /\b(bitcoin|crypto|nft|wallet|airdrop)\b.*\bhttps?:\/\//i,
+
+              // Generic promotional spam
+              /\b(check out|visit my|follow me)\b.*\bhttps?:\/\//i,
+
+              // Repeated characters (spammy behavior)
+              /(.)\1{10,}/,
+            ];
+
+            const isSpam = spamPatterns.some(pattern => pattern.test(commentBody));
+
+            // Additional heuristics
+            const hasMultipleLinks = (commentBody.match(/https?:\/\//g) || []).length >= 3;
+            const isVeryShortWithLink = commentBody.length < 50 && /https?:\/\//.test(commentBody);
+            const hasExcessiveEmojis = (commentBody.match(/[\u{1F300}-\u{1F9FF}]/gu) || []).length > 10;
+
+            if (isSpam || hasMultipleLinks || (isVeryShortWithLink && !commentBody.includes('github.com')) || hasExcessiveEmojis) {
+              console.log(`Spam detected from ${commentAuthor}: "${commentBody.substring(0, 100)}..."`);
+
+              // Delete the comment
+              await github.rest.issues.deleteComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: comment.id
+              });
+
+              // Add a warning comment
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body: `⚠️ Ein Kommentar von @${commentAuthor} wurde automatisch entfernt (Spam-Verdacht).\n\n_Falls dies ein Fehler war, kontaktiere bitte die Repository-Maintainer._`
+              });
+
+              console.log(`Deleted spam comment and posted warning`);
+            } else {
+              console.log(`Comment from ${commentAuthor} passed spam check`);
+            }

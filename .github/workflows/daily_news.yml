@@ -50,13 +50,23 @@ jobs:
               const labels = hasHighPriority ? ['ai-news', 'high-priority'] : ['ai-news'];
               const titlePrefix = hasHighPriority ? '🎯 Hochprioritäre' : '📰';
 
-              await github.rest.issues.create({
+              const issue = await github.rest.issues.create({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 title: `${titlePrefix} AI News - ${new Date().toISOString().split('T')[0]}`,
                 body: content,
                 labels: labels
               });
+
+              // Lock issue to prevent spam comments (only collaborators can comment)
+              await github.rest.issues.lock({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.data.number,
+                lock_reason: 'spam'
+              });
+
+              console.log(`Created and locked issue #${issue.data.number}`);
             } else {
               console.log(`File ${filename} not found`);
             }
