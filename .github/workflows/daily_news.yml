@@ -1,9 +1,9 @@
-name: Daily AI News Digest
+name: Weekly AI News Digest
 
 on:
   schedule:
-    # Täglich um 05:00 UTC (06:00 CET im Winter / 07:00 CEST im Sommer)
-    - cron: '0 5 * * *'
+    # Jeden Montag um 05:00 UTC (06:00 CET im Winter / 07:00 CEST im Sommer)
+    - cron: '0 5 * * 1'
   workflow_dispatch:  # Manuelles Triggern möglich
 
 permissions:
