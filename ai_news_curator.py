@@ -146,16 +146,19 @@ Format:
 
         return None
     
-    def fetch_news(self, hours_back: int = 24) -> (List[Dict], list):
-        """Sammelt News von verschiedenen Quellen"""
+    def fetch_news(self, hours_back: int = 168) -> (List[Dict], list):
+        """Sammelt News von verschiedenen Quellen (Standard: 7 Tage für Weekly Digest)"""
         news_items = []
 
         # Load URLs from previous reports to avoid duplicates
         print("🔍 Checking for duplicates in previous reports...")
-        seen_urls, seen_titles = self.load_previous_news(days_back=7)
+        seen_urls, seen_titles = self.load_previous_news(days_back=14)
         print(f"   Found {len(seen_urls)} URLs and {len(seen_titles)} titles in previous reports")
 
         cutoff_date = datetime.now() - timedelta(hours=hours_back)
+
+        # Limit items per source (Google sources are limited to reduce dominance)
+        google_sources = {'google_ai', 'google_developers'}
 
         # Fetch from all RSS feeds
         print(f"📡 Fetching from {len(self.sources)} RSS sources...")
@@ -163,7 +166,8 @@ Format:
             try:
                 feed = feedparser.parse(feed_url)
                 count = 0
-                for entry in feed.entries[:30]:  # Top 30 per source
+                max_items = 10 if source_name in google_sources else 20
+                for entry in feed.entries[:max_items]:
                     try:
                         # Parse publication date
                         if hasattr(entry, 'published_parsed') and entry.published_parsed:
