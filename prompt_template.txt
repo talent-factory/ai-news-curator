@@ -68,6 +68,16 @@ BESONDERE RELEVANZ-KRITERIEN:
    - Jupyter/Notebook-Integration mit AI → RELEVANT
    - Data Analysis & Visualization mit AI → INTERESSANT
 
+6. RESEARCH PAPERS (arXiv):
+   - KRITISCH: NUR relevant wenn praktisch anwendbar UND Code verfügbar
+   - Neue Techniken für LLM-Development (Prompt Engineering, RAG, Fine-tuning) → RELEVANT
+   - Benchmark-Ergebnisse für bekannte Modelle (Claude, GPT, Gemini) → INTERESSANT
+   - Neue Architekturen MIT Open-Source Implementation → RELEVANT
+   - Rein theoretische Papers OHNE praktischen Use-Case → IMMER SKIP
+   - Papers OHNE Code/GitHub Link → MEIST SKIP
+   - DEFAULT Score für arXiv Papers: 2 (nicht 3!)
+   - Nur bei außergewöhnlich praktischer Relevanz höher bewerten
+
 BEREITS GEMELDETE NEWS (LETZTE 7 TAGE):
 {recent_news}
 
@@ -99,8 +109,8 @@ KATEGORIE:
 - "cli_tools" = Terminal/CLI-basierte Entwicklungsumgebungen
 - "teaching" = Direkt für Unterricht nutzbar (Tutorials, Patterns, Best Practices)
 - "tools" = Andere Development Tools, Extensions, Frameworks
-- "research" = Interessante Entwicklung, aber nicht unmittelbar praktisch
-- "skip" = Nicht relevant
+- "research" = Research Papers mit praktischer Anwendbarkeit (arXiv mit Code)
+- "skip" = Nicht relevant (inkl. theoretische Papers ohne Code)
 
 WICHTIG:
 - CLI-basierte Tools (Terminal, Command-Line) sind BESONDERS relevant für moderne Entwickler
@@ -108,6 +118,12 @@ WICHTIG:
 - "Agentic" Ansätze (autonome AI-Agents) sind wichtig für zukünftige Entwicklung
 - Praktische Tools > Theoretische Papers
 - Developer Experience > Academic Research
+
+BESONDERE REGEL FÜR arXiv PAPERS:
+- Frage: "Kann ein IT-Student das in 1-2 Wochen mit Code ausprobieren?"
+- Wenn NEIN → score = 1, category = "skip"
+- Nur wenn JA und praktisch relevant → score = 2-3, category = "research"
+- NIEMALS score 5 für Papers (außer revolutionäres Paper mit sofort nutzbarem Code)
 
 WICHTIG: Antworte AUSSCHLIESSLICH mit gültigem JSON. Kein Text davor oder danach.
 

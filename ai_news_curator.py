@@ -53,6 +53,9 @@ class AINewsCurator:
             # Tech News
             'techcrunch_ai': 'https://techcrunch.com/category/artificial-intelligence/feed/',
             'venturebeat_ai': 'https://venturebeat.com/category/ai/feed/',
+
+            # Research Papers
+            'arxiv_cs_ai': 'https://rss.arxiv.org/rss/cs.AI',
         }
 
         # Load prompt template from file
@@ -157,8 +160,9 @@ Format:
 
         cutoff_date = datetime.now() - timedelta(hours=hours_back)
 
-        # Limit items per source (Google sources are limited to reduce dominance)
+        # Limit items per source (Google and arXiv sources are limited to reduce dominance)
         google_sources = {'google_ai', 'google_developers'}
+        arxiv_sources = {'arxiv_cs_ai', 'arxiv_cs_lg', 'arxiv_cs_cl'}
 
         # Fetch from all RSS feeds
         print(f"📡 Fetching from {len(self.sources)} RSS sources...")
@@ -166,7 +170,13 @@ Format:
             try:
                 feed = feedparser.parse(feed_url)
                 count = 0
-                max_items = 10 if source_name in google_sources else 20
+                # Limit arXiv to 10 items per source (too many theoretical papers)
+                if source_name in arxiv_sources:
+                    max_items = 10
+                elif source_name in google_sources:
+                    max_items = 10
+                else:
+                    max_items = 20
                 for entry in feed.entries[:max_items]:
                     try:
                         # Parse publication date
