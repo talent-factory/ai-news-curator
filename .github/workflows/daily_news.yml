@@ -26,10 +26,30 @@ jobs:
       - name: Install Dependencies
         run: |
           pip install -r requirements.txt
-      
+
+      - name: Setup flyctl
+        uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Open tunnel to private LLM-Gateway
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+        run: |
+          # Das Gateway ist privat (Fly 6PN/IPv6) und vom öffentlichen GH-Runner
+          # nur über einen fly-proxy-Tunnel erreichbar.
+          fly proxy 4000:4000 -a tf-llm-gateway &
+          # Warten bis der Tunnel steht (LiteLLM /health/liveliness, ohne Auth).
+          for i in $(seq 1 30); do
+            if curl -sf -o /dev/null http://localhost:4000/health/liveliness; then
+              echo "✓ Gateway-Tunnel bereit"; exit 0
+            fi
+            sleep 1
+          done
+          echo "✗ Gateway-Tunnel kam nicht hoch"; exit 1
+
       - name: Run AI News Curator
         env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GATEWAY_KEY: ${{ secrets.NEWS_CURATOR_GATEWAY_KEY }}
+          GATEWAY_URL: http://localhost:4000
         run: |
           python ai_news_curator.py
 

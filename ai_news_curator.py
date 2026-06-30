@@ -8,7 +8,7 @@ import os
 import json
 import re
 import time
-import anthropic
+from openai import OpenAI
 from datetime import datetime, timedelta
 from typing import List, Dict, Optional
 import feedparser
@@ -35,9 +35,21 @@ class NewsItem:
 
 class AINewsCurator:
     def __init__(
-        self, anthropic_api_key: str, prompt_template_path: str = "prompt_template.txt"
+        self,
+        gateway_key: str,
+        gateway_url: str = "http://localhost:4000",
+        model: str = "news-curator/classify",
+        prompt_template_path: str = "prompt_template.txt",
     ):
-        self.client = anthropic.Anthropic(api_key=anthropic_api_key)
+        # Statt direktem Provider-SDK sprechen wir den TF LLM-Gateway (LiteLLM) an.
+        # Vorteil: ein zurückgezogenes Modell ist ein Config-Edit am Gateway statt
+        # eines Ausfalls hier. Der Gateway ist OpenAI-kompatibel -> openai-SDK.
+        # Modell ist ein logischer Alias (news-curator/classify), keine Provider-ID.
+        base_url = gateway_url.rstrip("/")
+        if not base_url.endswith("/v1"):
+            base_url += "/v1"
+        self.client = OpenAI(base_url=base_url, api_key=gateway_key)
+        self.model = model
         self.sources = {
             # Official Blogs & News
             "anthropic_blog": "https://www.anthropic.com/news/rss",
@@ -312,7 +324,7 @@ Format:
     def analyze_relevance(
         self, news_items: List[Dict], seen_titles: list
     ) -> List[NewsItem]:
-        """Nutzt Claude API um Relevanz zu bewerten"""
+        """Nutzt den LLM-Gateway (Alias news-curator/classify) um Relevanz zu bewerten"""
 
         filtered_items = []
         success_count = 0
@@ -335,14 +347,14 @@ Format:
             )
 
             try:
-                response = self.client.messages.create(
-                    model="claude-sonnet-4-6",
+                response = self.client.chat.completions.create(
+                    model=self.model,
                     max_tokens=400,
                     messages=[{"role": "user", "content": prompt}],
                 )
 
                 # Verbesserte JSON-Extraktion
-                response_text = response.content[0].text.strip()
+                response_text = (response.choices[0].message.content or "").strip()
                 analysis = self.extract_json_from_text(response_text)
 
                 if not analysis:
@@ -400,9 +412,10 @@ Format:
         # melden - genau das hat den wochenlangen Ausfall verschleiert.
         if news_items and success_count == 0:
             raise RuntimeError(
-                f"Claude-Analyse für alle {len(news_items)} Items fehlgeschlagen "
-                f"({error_count} Fehler). Vermutlich ungültige/zurückgezogene Model-ID "
-                f"oder API-Problem - siehe Fehlermeldungen oben."
+                f"LLM-Analyse für alle {len(news_items)} Items fehlgeschlagen "
+                f"({error_count} Fehler). Vermutlich Gateway nicht erreichbar "
+                f"(fly proxy / GATEWAY_URL), ungültiger GATEWAY_KEY, unbekannter "
+                f"Alias oder Gateway-/Provider-Problem - siehe Fehlermeldungen oben."
             )
 
         # Sortiere nach Relevanz
@@ -481,7 +494,7 @@ Format:
             emoji = category_emojis.get(cat, "📌")
             report += f"- {emoji} {cat}: {count}\n"
 
-        report += "\n_Generiert mit Claude API | Talent Factory GmbH_\n"
+        report += "\n_Generiert via TF LLM-Gateway (Claude) | Talent Factory GmbH_\n"
 
         return report
 
@@ -491,7 +504,7 @@ Format:
         news_items, seen_titles = self.fetch_news(hours_back)
         print(f"✅ {len(news_items)} Items gefunden")
 
-        print("🤖 Analysiere Relevanz mit Claude...")
+        print("🤖 Analysiere Relevanz via LLM-Gateway...")
         analyzed_items = self.analyze_relevance(news_items, seen_titles)
         print(f"✅ {len(analyzed_items)} Items analysiert")
 
@@ -508,14 +521,19 @@ Format:
 
 
 def main():
-    # API Key aus Environment Variable
-    api_key = os.getenv("ANTHROPIC_API_KEY")
-    if not api_key:
-        print("❌ Error: ANTHROPIC_API_KEY environment variable nicht gesetzt!")
-        print("Setze mit: export ANTHROPIC_API_KEY='dein-key'")
+    # Zugang zum TF LLM-Gateway (Virtual Key + Base URL) aus Environment Variables.
+    # Provider-Keys liegen NICHT mehr in dieser App, sondern als Fly-Secret am Gateway.
+    gateway_key = os.getenv("GATEWAY_KEY")
+    if not gateway_key:
+        print("❌ Error: GATEWAY_KEY environment variable nicht gesetzt!")
+        print("Setze den Virtual Key des Gateways: export GATEWAY_KEY='sk-...'")
         return
 
-    curator = AINewsCurator(api_key)
+    # Default localhost:4000 = lokaler `fly proxy`-Tunnel bzw. CI-Tunnel.
+    gateway_url = os.getenv("GATEWAY_URL", "http://localhost:4000")
+    model = os.getenv("GATEWAY_MODEL", "news-curator/classify")
+
+    curator = AINewsCurator(gateway_key, gateway_url=gateway_url, model=model)
     report = curator.run(hours_back=24)
     print("\n" + "=" * 60)
     print(report[:500] + "...")
