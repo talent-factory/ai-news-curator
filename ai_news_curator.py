@@ -336,7 +336,7 @@ Format:
 
             try:
                 response = self.client.messages.create(
-                    model="claude-sonnet-4-20250514",
+                    model="claude-sonnet-4-6",
                     max_tokens=400,
                     messages=[{"role": "user", "content": prompt}],
                 )
@@ -394,6 +394,16 @@ Format:
         print(
             f"📊 Analyse-Statistik: {success_count} erfolgreich, {error_count} Fehler"
         )
+
+        # Fail loudly if EVERY analysis failed (e.g. retired/invalid model ID).
+        # Sonst würde ein leerer Report erzeugt und der Workflow täuschend "success"
+        # melden - genau das hat den wochenlangen Ausfall verschleiert.
+        if news_items and success_count == 0:
+            raise RuntimeError(
+                f"Claude-Analyse für alle {len(news_items)} Items fehlgeschlagen "
+                f"({error_count} Fehler). Vermutlich ungültige/zurückgezogene Model-ID "
+                f"oder API-Problem - siehe Fehlermeldungen oben."
+            )
 
         # Sortiere nach Relevanz
         return sorted(filtered_items, key=lambda x: x.relevance_score, reverse=True)
