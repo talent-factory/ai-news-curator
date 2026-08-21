@@ -78,3 +78,5 @@ Thumbs.db
 ai_news_digest_*.md
 # Augment local rules
 .augment/
+.headroom/
+.serena/
