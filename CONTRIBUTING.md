@@ -37,7 +37,7 @@ pip install -r requirements.txt
 pip install pytest black ruff mypy
 
 # Setze deinen API Key
-export ANTHROPIC_API_KEY='sk-ant-...'
+export GATEWAY_KEY='sk-...'  # Virtual Key des TF LLM-Gateway, siehe CLAUDE.md
 ```
 
 ### 3. Erstelle einen Feature Branch

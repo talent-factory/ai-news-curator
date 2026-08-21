@@ -11,3 +11,15 @@ dependencies = [
     "python-dateutil>=2.9.0.post0",
     "requests>=2.32.5",
 ]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["."]
+python_files = ["test_*.py"]
+# test_sources.py ist ein manuelles Debug-Skript gegen live RSS/Reddit/GitHub-Quellen
+# (siehe Docstring), keine echte Unit-Test-Suite - für CI ausgeschlossen (flaky/slow).
+addopts = "--ignore=test_sources.py"

@@ -5,10 +5,11 @@ Speziell für Software-Entwicklung mit KI und KI-Integration in Produkte
 """
 
 import os
+import sys
 import json
 import re
 import time
-from openai import OpenAI
+from openai import APIError, OpenAI
 from datetime import datetime, timedelta
 from typing import List, Dict, Optional
 import feedparser
@@ -48,8 +49,13 @@ class AINewsCurator:
         base_url = gateway_url.rstrip("/")
         if not base_url.endswith("/v1"):
             base_url += "/v1"
-        self.client = OpenAI(base_url=base_url, api_key=gateway_key)
+        # Timeout + begrenzte Retries: ein halboffener fly-proxy-Tunnel würde sonst
+        # bis zu 600s pro Item hängen (openai-SDK-Default) statt schnell zu scheitern.
+        self.client = OpenAI(
+            base_url=base_url, api_key=gateway_key, timeout=60.0, max_retries=2
+        )
         self.model = model
+        print(f"🔌 Gateway: {base_url} | Modell-Alias: {model}")
         self.sources = {
             # Official Blogs & News
             "anthropic_blog": "https://www.anthropic.com/news/rss",
@@ -329,6 +335,8 @@ Format:
         filtered_items = []
         success_count = 0
         error_count = 0
+        gateway_error_count = 0  # Auth/Tunnel/Alias-Fehler der openai-SDK selbst
+        logged_error_types = set()  # jede Fehler-Art mind. einmal detailliert loggen
 
         # Format seen_titles for the prompt
         seen_titles_text = "\n".join(f"- {title}" for title in seen_titles)
@@ -385,11 +393,29 @@ Format:
 
             except Exception as e:
                 error_count += 1
-                # Detaillierteres Error-Logging für Debugging
-                if error_count <= 3:  # Zeige nur erste 3 Fehler im Detail
-                    print(f"⚠️  Error analyzing '{item['title'][:50]}...': {e}")
+                # openai.APIError (und Subklassen wie AuthenticationError,
+                # APIConnectionError, NotFoundError) = Gateway/Tunnel/Key/Alias-Problem.
+                # Alles andere (ValueError etc.) = Content-/Parsing-Problem eines
+                # einzelnen Items. Beides in einen Topf zu werfen erschwert Diagnose.
+                is_gateway_error = isinstance(e, APIError)
+                if is_gateway_error:
+                    gateway_error_count += 1
 
-                # Fallback: Füge Item mit niedrigem Score hinzu statt es zu verlieren
+                # Jede Fehler-Art mind. einmal loggen, nicht nur die ersten 3 global -
+                # sonst bleibt ein spät einsetzender Tunnel-Ausfall unbeschrieben, wenn
+                # die ersten paar Fehler unabhängige Content-Probleme waren.
+                error_type = type(e).__name__
+                if error_count <= 3 or error_type not in logged_error_types:
+                    logged_error_types.add(error_type)
+                    kind = "Gateway" if is_gateway_error else "Content"
+                    print(
+                        f"⚠️  [{kind}] Error analyzing '{item['title'][:50]}...': "
+                        f"{error_type}: {e}"
+                    )
+
+                # Fallback: Füge Item mit niedrigem Score hinzu statt es zu verlieren.
+                # Eigene Kategorie statt "skip" - sonst ist ein Gateway-Ausfall im
+                # Report ununterscheidbar von einer legitimen "nicht relevant"-Bewertung.
                 filtered_items.append(
                     NewsItem(
                         title=item["title"],
@@ -398,24 +424,61 @@ Format:
                         published=item["published"],
                         summary=item["summary"][:200],
                         relevance_score=1,  # Niedrigster Score
-                        category="skip",
+                        category="gateway_error" if is_gateway_error else "error",
                         reasoning=f"Automatische Analyse fehlgeschlagen: {str(e)[:100]}",
                     )
                 )
 
         print(
-            f"📊 Analyse-Statistik: {success_count} erfolgreich, {error_count} Fehler"
+            f"📊 Analyse-Statistik: {success_count} erfolgreich, {error_count} Fehler "
+            f"(davon {gateway_error_count} Gateway-Fehler)"
         )
 
-        # Fail loudly if EVERY analysis failed (e.g. retired/invalid model ID).
-        # Sonst würde ein leerer Report erzeugt und der Workflow täuschend "success"
-        # melden - genau das hat den wochenlangen Ausfall verschleiert.
+        # GitHub-Actions-Annotation + Step-Summary: ein degradierter Lauf (einige
+        # Gateway-Fehler, aber nicht genug für den Guard unten) soll sichtbar sein,
+        # ohne dass jemand manuell den rohen Step-Log öffnen muss.
+        if gateway_error_count > 0:
+            print(
+                f"::warning::LLM-Gateway: {gateway_error_count}/{len(news_items)} "
+                f"Items mit Gateway-Fehlern (Auth/Tunnel/Alias?)"
+            )
+            summary_path = os.getenv("GITHUB_STEP_SUMMARY")
+            if summary_path:
+                try:
+                    with open(summary_path, "a", encoding="utf-8") as f:
+                        f.write(
+                            f"\n⚠️ **Gateway-Fehler:** {gateway_error_count}/"
+                            f"{len(news_items)} Items fehlgeschlagen "
+                            f"(Auth/Tunnel/Alias?)\n"
+                        )
+                except OSError:
+                    pass  # Step-Summary ist ein Nice-to-have, kein Show-Stopper
+
+        # Fail loudly wenn ALLE Analysen fehlschlugen (z.B. zurückgezogene Model-ID)
+        # ODER ein grosser Anteil davon Gateway-Fehler (nicht Content-Fehler!) sind -
+        # das deutet auf einen kaputten Gateway/Tunnel/Key statt einzelne Items hin.
+        # Sonst würde ein (teilweise) leerer Report erzeugt und der Workflow
+        # täuschend "success" melden - genau das hat den wochenlangen Ausfall
+        # verschleiert.
         if news_items and success_count == 0:
             raise RuntimeError(
                 f"LLM-Analyse für alle {len(news_items)} Items fehlgeschlagen "
                 f"({error_count} Fehler). Vermutlich Gateway nicht erreichbar "
                 f"(fly proxy / GATEWAY_URL), ungültiger GATEWAY_KEY, unbekannter "
                 f"Alias oder Gateway-/Provider-Problem - siehe Fehlermeldungen oben."
+            )
+
+        gateway_error_threshold = 0.3
+        if (
+            news_items
+            and gateway_error_count > len(news_items) * gateway_error_threshold
+        ):
+            raise RuntimeError(
+                f"LLM-Gateway: {gateway_error_count}/{len(news_items)} Items mit "
+                f"Gateway-Fehlern (>{int(gateway_error_threshold * 100)}%). "
+                f"Vermutlich Gateway nicht erreichbar (fly proxy / GATEWAY_URL), "
+                f"ungültiger GATEWAY_KEY oder unbekannter Alias - siehe "
+                f"Fehlermeldungen oben."
             )
 
         # Sortiere nach Relevanz
@@ -432,7 +495,23 @@ Format:
 
 ---
 
-## 🔥 Sofort relevant (Score 4-5)
+"""
+
+        # Sichtbare Warnung direkt im Report (landet im GitHub Issue), falls der
+        # Gateway/Tunnel/Key während des Laufs Probleme hatte. Ohne diese Sektion
+        # wären Gateway-Fehler nur als unauffällige Zahl in der Kategorien-Statistik
+        # sichtbar - ununterscheidbar von legitimen "nicht relevant"-Bewertungen.
+        gateway_error_items = [
+            item for item in analyzed_items if item.category == "gateway_error"
+        ]
+        if gateway_error_items:
+            report += f"""## ⚠️ Gateway-Fehler ({len(gateway_error_items)} von {len(analyzed_items)} Items)
+
+_Diese Items konnten NICHT bewertet werden (Gateway/Tunnel/Key-Problem, nicht Content-bezogen)._
+
+"""
+
+        report += """## 🔥 Sofort relevant (Score 4-5)
 
 """
 
@@ -447,6 +526,8 @@ Format:
             "tools": "🛠️",
             "research": "🔬",
             "frameworks": "📦",
+            "gateway_error": "🔌",  # Item nicht bewertet - Gateway/Tunnel/Key-Fehler
+            "error": "⚠️",  # Item nicht bewertet - Content-/Parsing-Fehler
         }
 
         if not high_priority:
@@ -527,11 +608,18 @@ def main():
     if not gateway_key:
         print("❌ Error: GATEWAY_KEY environment variable nicht gesetzt!")
         print("Setze den Virtual Key des Gateways: export GATEWAY_KEY='sk-...'")
-        return
+        # sys.exit(1) statt `return`: ein blosses return liesse den Prozess mit
+        # Exit-Code 0 enden -> Workflow-Step wird grün, obwohl NICHTS gelaufen ist
+        # und keine Digest-Datei existiert. Das war eine komplett stille No-Op.
+        sys.exit(1)
 
+    # `or`, nicht der zweite os.getenv-Parameter: eine gesetzte, aber leere Env-Var
+    # (z.B. leere Zeile in .env oder ein leerer Secret-Wert) würde den Default sonst
+    # NICHT greifen lassen, base_url würde dann relativ ("/v1") und jeder Call
+    # scheitert mit einem kryptischen httpx-Fehler statt einer klaren Meldung.
     # Default localhost:4000 = lokaler `fly proxy`-Tunnel bzw. CI-Tunnel.
-    gateway_url = os.getenv("GATEWAY_URL", "http://localhost:4000")
-    model = os.getenv("GATEWAY_MODEL", "news-curator/classify")
+    gateway_url = os.getenv("GATEWAY_URL") or "http://localhost:4000"
+    model = os.getenv("GATEWAY_MODEL") or "news-curator/classify"
 
     curator = AINewsCurator(gateway_key, gateway_url=gateway_url, model=model)
     report = curator.run(hours_back=24)

@@ -70,7 +70,7 @@ Wir bitten dich:
 
 ### Falls ein Key versehentlich committed wurde
 
-1. **Sofort:** Regeneriere den Key in der Anthropic Console
+1. **Sofort:** Widerrufe/regeneriere den Virtual Key am TF LLM-Gateway (`scripts/provision_keys.sh`)
 2. **Entfernen:** Nutze `git filter-branch` oder BFG Repo-Cleaner
 3. **Force Push:** Nur für eigenen Fork, NICHT für Main Repo
 4. **Melden:** Informiere Maintainer wenn es im Main Repo war
@@ -93,13 +93,13 @@ git push origin --force --all
 # ✅ Richtig: Nutze GitHub Secrets
 - name: Run AI News Curator
   env:
-    ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+    GATEWAY_KEY: ${{ secrets.NEWS_CURATOR_GATEWAY_KEY }}
   run: python ai_news_curator.py
 
 # ❌ Falsch: Nie Keys im YAML hardcoden
 - name: Run AI News Curator
   env:
-    ANTHROPIC_API_KEY: "sk-ant-api03-..."  # NIEMALS!
+    GATEWAY_KEY: "sk-..."  # NIEMALS!
   run: python ai_news_curator.py
 ```
 
