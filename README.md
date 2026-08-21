@@ -136,16 +136,30 @@ cd ai-news-curator
 pip install -r requirements.txt
 ```
 
-### 3. API Key konfigurieren
+### 3. Gateway-Zugang konfigurieren
+
+Die App spricht nicht mehr direkt einen Provider an, sondern den **TF LLM-Gateway**
+(LiteLLM). Provider-Keys liegen ausschliesslich am Gateway; die App braucht nur einen
+Virtual Key und die Base URL.
 
 ```bash
-export ANTHROPIC_API_KEY='sk-ant-...'
+cp .env.example .env   # GATEWAY_KEY (sk-...) eintragen
 ```
 
-Oder für permanente Konfiguration in `~/.bashrc` oder `~/.zshrc`:
+Der Gateway ist privat (Fly 6PN) — lokal erreichbar über einen Tunnel:
+
 ```bash
-echo 'export ANTHROPIC_API_KEY="sk-ant-..."' >> ~/.bashrc
+fly proxy 4000:4000 -a tf-llm-gateway &   # -> http://localhost:4000
 ```
+
+Benötigte Variablen (siehe `.env.example`):
+
+- `GATEWAY_KEY` — Virtual Key des Gateways (least privilege auf `news-curator/classify`)
+- `GATEWAY_URL` — Base URL, Default `http://localhost:4000`
+- `GATEWAY_MODEL` — optional, Default-Alias `news-curator/classify`
+
+> Virtual Key erzeugen: im `llm-gateway`-Repo `scripts/provision_keys.sh`
+> mit `KEY_ALIAS=news-curator KEY_MODELS='["news-curator/classify"]'`.
 
 ### 4. Ersten Report generieren
 
@@ -161,7 +175,7 @@ Output: `ai_news_digest_YYYYMMDD.md`
 
 ```
 ai-news-curator/
-├── ai_news_curator.py          # Hauptscript mit Claude-Integration
+├── ai_news_curator.py          # Hauptscript (LLM-Gateway-Integration)
 ├── prompt_template.txt         # 🆕 Externer Analyse-Prompt (anpassbar!)
 ├── config.yaml                 # Konfiguration (Quellen, Filter, etc.)
 ├── requirements.txt            # Python Dependencies
@@ -193,11 +207,10 @@ python ai_news_curator.py
 
 ### Automatisiert via GitHub Actions
 
-1. **GitHub Secret hinzufügen:**
-   - Gehe zu: Repository Settings → Secrets and Variables → Actions
-   - Klicke: "New repository secret"
-   - Name: `ANTHROPIC_API_KEY`
-   - Value: Dein Claude API Key
+1. **GitHub Secrets hinzufügen** (Repository Settings → Secrets and Variables → Actions):
+   - `NEWS_CURATOR_GATEWAY_KEY` — Virtual Key des Gateways (`sk-...`)
+   - `FLY_API_TOKEN` — Fly-Token mit Zugriff auf `tf-llm-gateway` (für den `fly proxy`-Tunnel,
+     da der Gateway privat im Fly-Netz liegt und der GH-Runner ihn nur darüber erreicht)
 
 2. **Workflow aktivieren:**
    - Läuft automatisch täglich um 05:00 UTC (06:00 CET)
@@ -385,12 +398,24 @@ notion = Client(auth=os.getenv("NOTION_TOKEN"))
 
 ## 🛠️ Troubleshooting
 
-### "ANTHROPIC_API_KEY nicht gesetzt"
+### "GATEWAY_KEY nicht gesetzt"
 
 ```bash
-echo $ANTHROPIC_API_KEY  # Sollte Key zeigen
-export ANTHROPIC_API_KEY='dein-key'
+echo $GATEWAY_KEY  # Sollte den Virtual Key (sk-...) zeigen
+export GATEWAY_KEY='sk-...'
 ```
+
+### "LLM-Analyse für alle Items fehlgeschlagen" / Connection refused
+
+Meist ist der Gateway-Tunnel nicht offen oder der Key/Alias stimmt nicht:
+
+```bash
+fly proxy 4000:4000 -a tf-llm-gateway &        # Tunnel öffnen
+curl -sf http://localhost:4000/health/liveliness  # sollte 200 liefern
+```
+
+Prüfe ausserdem `GATEWAY_URL` (Default `http://localhost:4000`) und dass der
+Virtual Key Zugriff auf den Alias `news-curator/classify` hat.
 
 ### Keine News gefunden
 

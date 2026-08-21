@@ -28,18 +28,21 @@ venv\Scripts\activate     # Windows
 pip install -r requirements.txt
 ```
 
-### Schritt 3: API Key Setup (1 Min)
+### Schritt 3: Gateway-Zugang (1 Min)
+
+Die App nutzt den **TF LLM-Gateway** (LiteLLM) statt eines direkten Provider-Keys.
 
 ```bash
-# Hol dir einen Claude API Key von:
-# https://console.anthropic.com/
+# Gateway-Tunnel öffnen (privat im Fly-Netz)
+fly proxy 4000:4000 -a tf-llm-gateway &
 
-# Setze als Environment Variable
-export ANTHROPIC_API_KEY='sk-ant-api03-...'
-
-# Optional: Permanent speichern
-echo 'export ANTHROPIC_API_KEY="sk-ant-..."' >> ~/.bashrc
+# Virtual Key + URL setzen (oder in .env eintragen, siehe .env.example)
+export GATEWAY_KEY='sk-...'              # Virtual Key des Gateways
+export GATEWAY_URL='http://localhost:4000'
 ```
+
+> Virtual Key erzeugen: im `llm-gateway`-Repo `scripts/provision_keys.sh`
+> mit `KEY_ALIAS=news-curator KEY_MODELS='["news-curator/classify"]'`.
 
 ### Schritt 4: Erster Test (1 Min)
 
@@ -102,13 +105,13 @@ git remote add origin https://github.com/DEIN-USERNAME/ai-news-curator.git
 git push -u origin main
 ```
 
-### 2. Secret hinzufügen
+### 2. Secrets hinzufügen
 
-- Gehe zu: **Settings** → **Secrets and variables** → **Actions**
-- Klicke: **New repository secret**
-- Name: `ANTHROPIC_API_KEY`
-- Value: Dein Claude API Key
-- **Add secret**
+Gehe zu: **Settings** → **Secrets and variables** → **Actions** → **New repository secret**
+und lege zwei Secrets an:
+
+- `NEWS_CURATOR_GATEWAY_KEY` — Virtual Key des Gateways (`sk-...`)
+- `FLY_API_TOKEN` — Fly-Token mit Zugriff auf `tf-llm-gateway` (für den `fly proxy`-Tunnel)
 
 ### 3. Workflow aktivieren
 
@@ -153,10 +156,12 @@ Gib Studierenden den Report und bitte sie:
 pip install -r requirements.txt
 ```
 
-### "ANTHROPIC_API_KEY not set"
+### "GATEWAY_KEY not set" / "Connection refused"
 ```bash
-echo $ANTHROPIC_API_KEY  # Sollte deinen Key zeigen
-export ANTHROPIC_API_KEY='sk-ant-...'
+echo $GATEWAY_KEY                                  # Sollte den Virtual Key zeigen
+export GATEWAY_KEY='sk-...'
+fly proxy 4000:4000 -a tf-llm-gateway &            # Tunnel zum privaten Gateway
+curl -sf http://localhost:4000/health/liveliness   # sollte 200 liefern
 ```
 
 ### Keine News gefunden
@@ -166,7 +171,7 @@ export ANTHROPIC_API_KEY='sk-ant-...'
 
 ### GitHub Action läuft nicht
 - Workflow-Datei in `.github/workflows/` ?
-- Secret korrekt als `ANTHROPIC_API_KEY` benannt?
+- Secrets korrekt als `NEWS_CURATOR_GATEWAY_KEY` und `FLY_API_TOKEN` benannt?
 - In Settings → Actions → "Allow all actions" aktiviert?
 
 ---

@@ -2,7 +2,13 @@
 
 ## Überblick
 
-Der AI News Curator nutzt **Anthropic's Claude API** als intelligenten Filter-Agenten. Jede gesammelte News wird einzeln von Claude analysiert und bewertet - nicht nur nach Keywords, sondern mit echtem Kontext-Verständnis.
+Der AI News Curator nutzt **Claude** als intelligenten Filter-Agenten. Jede gesammelte News wird einzeln analysiert und bewertet - nicht nur nach Keywords, sondern mit echtem Kontext-Verständnis.
+
+> **NEU ab Version 3.0 (Gateway-Migration):** Die Calls laufen nicht mehr direkt gegen
+> die Anthropic-API, sondern über den **TF LLM-Gateway** (LiteLLM, OpenAI-kompatibel) unter
+> dem logischen Alias `news-curator/classify` (dahinter weiterhin Claude Sonnet, Fallback
+> Opus). Modellwechsel = Config-Edit am Gateway, nicht in dieser App. Zugang: siehe
+> [Gateway-Zugang](#-gateway-zugang-statt-provider-api-key).
 
 ### Warum Claude?
 
@@ -139,8 +145,10 @@ KONTEXT:
 ```python
 # In ai_news_curator.py oder beim Initialisieren
 curator = AINewsCurator(
-    api_key,
-    prompt_template_path="custom_prompt.txt"
+    gateway_key,                       # Virtual Key des Gateways
+    gateway_url="http://localhost:4000",
+    model="news-curator/classify",
+    prompt_template_path="custom_prompt.txt",
 )
 ```
 
@@ -180,6 +188,11 @@ Reports zeigen jetzt Kategorien mit Emojis:
 ```
 
 ## 💰 Kosten & Rate Limits
+
+> **Gateway-Hinweis:** Kosten werden jetzt am Gateway pro Projekt getrackt
+> (`metadata.project=news-curator`) und über `max_budget`/`budget_duration` des Virtual
+> Keys begrenzt. Die folgenden Modell-Preise gelten weiterhin, da hinter
+> `news-curator/classify` Claude Sonnet steht.
 
 ### Claude Sonnet 4 Pricing (Stand Januar 2025)
 
@@ -222,32 +235,41 @@ Tägliche Kosten:
 # Reduziert API-Calls um 80%
 ```
 
-## 🔐 API Key Setup
+## 🔐 Gateway-Zugang (statt Provider-API-Key)
 
-### API Key erhalten
+Seit der Gateway-Migration spricht die App **nicht mehr direkt** Anthropic an, sondern
+den **TF LLM-Gateway** (LiteLLM, OpenAI-kompatibel). Provider-Keys (`ANTHROPIC_API_KEY`
+etc.) liegen ausschliesslich als Fly-Secret am Gateway — ein zurückgezogenes Modell ist
+damit ein Config-Edit am Gateway statt eines Ausfalls hier.
 
-1. Gehe zu: https://console.anthropic.com/
-2. Login/Signup
-3. Settings → API Keys → "Create Key"
-4. Kopiere den Key (format: `sk-ant-api03-...`)
+### Virtual Key erhalten
+
+Im `llm-gateway`-Repo einen projekt-scoped Virtual Key provisionieren:
+
+```bash
+LITELLM_MASTER_KEY=sk-master-… \
+KEY_ALIAS=news-curator \
+KEY_MODELS='["news-curator/classify"]' \
+scripts/provision_keys.sh        # gibt einen sk-… zurück
+```
 
 ### Lokal verwenden
 
-**Empfohlen: Environment Variable**
 ```bash
-export ANTHROPIC_API_KEY='sk-ant-api03-...'
+# Tunnel zum privaten Gateway (Fly 6PN)
+fly proxy 4000:4000 -a tf-llm-gateway &
+
+# Environment Variablen (oder .env, siehe .env.example)
+export GATEWAY_KEY='sk-...'                 # Virtual Key
+export GATEWAY_URL='http://localhost:4000'  # Default
+# export GATEWAY_MODEL='news-curator/classify'  # optionaler Alias-Override
 ```
 
-**Persistent (in ~/.bashrc oder ~/.zshrc):**
-```bash
-echo 'export ANTHROPIC_API_KEY="sk-ant-..."' >> ~/.bashrc
-source ~/.bashrc
-```
-
-**Alternative: .env File**
+**Alternative: .env File** (siehe `.env.example`)
 ```bash
 # .env
-ANTHROPIC_API_KEY=sk-ant-api03-...
+GATEWAY_KEY=sk-...
+GATEWAY_URL=http://localhost:4000
 ```
 
 ## 🛠️ Troubleshooting

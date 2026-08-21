@@ -1,0 +1,26 @@
+name: Tests
+
+on:
+  push:
+    branches: [develop, main]
+  pull_request:
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Install Dependencies
+        # --locked statt stiller Neu-Auflösung: bricht sichtbar, falls
+        # pyproject.toml editiert wurde, ohne uv.lock nachzuziehen.
+        run: uv sync --dev --locked
+
+      - name: Run Tests
+        run: uv run pytest -v
