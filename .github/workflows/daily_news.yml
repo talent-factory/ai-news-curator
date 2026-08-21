@@ -13,20 +13,28 @@ jobs:
   curate-news:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      # Single Source of Truth für den Modell-Alias - wird sowohl vom
+      # Pre-Flight-Check als auch vom eigentlichen Run gelesen, damit beide
+      # nicht auseinanderlaufen können (vorher 4x hardcoded dupliziert).
+      GATEWAY_MODEL: news-curator/classify
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
-      
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-          cache: 'pip'
-      
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+
       - name: Install Dependencies
         run: |
-          pip install -r requirements.txt
+          # Gleicher Weg (pyproject.toml + uv.lock) wie tests.yml - vorher
+          # lief dieser Job auf `pip install -r requirements.txt` mit Python
+          # 3.11, während die Tests gegen pyproject.toml/uv.lock mit Python
+          # 3.13 liefen: ein grüner Testlauf hätte die tatsächliche
+          # Produktionsumgebung nicht validiert. --locked bricht statt einer
+          # stillen Neu-Auflösung, falls pyproject.toml/uv.lock auseinanderlaufen.
+          uv sync --locked
 
       - name: Setup flyctl
         uses: superfly/flyctl-actions/setup-flyctl@master
@@ -59,33 +67,45 @@ jobs:
           GATEWAY_KEY: ${{ secrets.NEWS_CURATOR_GATEWAY_KEY }}
         run: |
           # /health/liveliness beweist nur, dass der LiteLLM-Prozess antwortet -
-          # NICHT dass der Virtual Key gültig ist oder der Alias
-          # news-curator/classify existiert. Das ist aber genau das, was ein
-          # Config-Edit am Gateway (Modellwechsel, Key-Rotation) am ehesten
-          # kaputt macht. Ein authentifizierter Pre-Flight-Call schlägt dafür
-          # in Sekunden fehl statt erst nach bis zu 20 verschwendeten Item-Calls.
+          # NICHT dass der Virtual Key gültig ist oder der Alias $GATEWAY_MODEL
+          # existiert. Das ist aber genau das, was ein Config-Edit am Gateway
+          # (Modellwechsel, Key-Rotation) am ehesten kaputt macht. Ein
+          # authentifizierter Pre-Flight-Call schlägt dafür in Sekunden fehl
+          # statt erst nach bis zu 20 verschwendeten Item-Calls.
           test -n "$GATEWAY_KEY" || { echo "✗ NEWS_CURATOR_GATEWAY_KEY ist leer"; exit 1; }
           response=$(curl -s -o /tmp/models.json -w "%{http_code}" \
             -H "Authorization: Bearer $GATEWAY_KEY" \
             http://localhost:4000/v1/models)
+          if [ "$response" = "000" ]; then
+            # Verbindungsfehler (Tunnel-Blip) != ungültiger Key. Beides als
+            # "Key ungültig" zu melden schickt die Fehlersuche in die falsche
+            # Richtung (Key-Rotation statt Tunnel-Diagnose).
+            echo "✗ Konnte Gateway nicht erreichen (curl-Verbindungsfehler, kein HTTP-Code)"
+            exit 1
+          fi
           if [ "$response" != "200" ]; then
             echo "✗ Gateway-Key ungültig (HTTP $response)"
             cat /tmp/models.json
             exit 1
           fi
-          if ! grep -q "news-curator/classify" /tmp/models.json; then
-            echo "✗ Alias 'news-curator/classify' ist für diesen Key nicht sichtbar"
+          # jq statt grep: ein reiner Substring-Match würde auch bei einem
+          # umbenannten Alias wie "$GATEWAY_MODEL-v2" fälschlich "verfügbar"
+          # melden, wenn der alte Alias entfernt wurde - exakter id-Vergleich
+          # fängt genau die Drift, die dieser Check abfangen soll.
+          if ! jq -e --arg model "$GATEWAY_MODEL" \
+               '.data[]? | select(.id == $model)' /tmp/models.json > /dev/null; then
+            echo "✗ Alias '$GATEWAY_MODEL' ist für diesen Key nicht sichtbar"
             cat /tmp/models.json
             exit 1
           fi
-          echo "✓ Gateway-Key gültig, Alias news-curator/classify verfügbar"
+          echo "✓ Gateway-Key gültig, Alias $GATEWAY_MODEL verfügbar"
 
       - name: Run AI News Curator
         env:
           GATEWAY_KEY: ${{ secrets.NEWS_CURATOR_GATEWAY_KEY }}
           GATEWAY_URL: http://localhost:4000
         run: |
-          python ai_news_curator.py
+          uv run python ai_news_curator.py
 
       - name: Create Issue with News Digest
         if: success()
@@ -107,6 +127,17 @@ jobs:
               const meta = content.match(
                 /<!-- digest-meta: high_priority=(\d+) medium_priority=(\d+) gateway_errors=(\d+) -->/
               );
+              if (!meta) {
+                // Fehlender Marker darf NICHT lautlos zu "alles normal"
+                // degradieren - das wäre genau der hasHighPriority-Bug von
+                // vorher, nur in die andere Richtung (immer false statt
+                // immer true). Denkbare Ursachen: alter gecachter Digest im
+                // Repo, künftige Formatänderung am Marker.
+                core.warning(
+                  `digest-meta-Marker nicht in ${filename} gefunden - ` +
+                  `Priority-Label und [DEGRADED]-Prefix können falsch sein.`
+                );
+              }
               const highPriorityCount = meta ? parseInt(meta[1], 10) : 0;
               const gatewayErrorCount = meta ? parseInt(meta[3], 10) : 0;
               const hasHighPriority = highPriorityCount > 0;

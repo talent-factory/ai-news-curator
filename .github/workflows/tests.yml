@@ -18,7 +18,9 @@ jobs:
         uses: astral-sh/setup-uv@v3
 
       - name: Install Dependencies
-        run: uv sync --dev
+        # --locked statt stiller Neu-Auflösung: bricht sichtbar, falls
+        # pyproject.toml editiert wurde, ohne uv.lock nachzuziehen.
+        run: uv sync --dev --locked
 
       - name: Run Tests
         run: uv run pytest -v

@@ -29,7 +29,7 @@ from unittest.mock import MagicMock, patch
 import openai
 import pytest
 
-from ai_news_curator import AINewsCurator, NewsItem, main
+from ai_news_curator import AINewsCurator, GatewayResponseError, NewsItem, main
 
 
 def _prompt_template_for(curator: AINewsCurator) -> None:
@@ -272,6 +272,83 @@ def test_does_not_raise_when_gateway_error_rate_below_threshold():
 def test_no_items_does_not_raise():
     curator = AINewsCurator(gateway_key="sk-test")
     assert curator.analyze_relevance([], seen_titles=[]) == []
+
+
+def test_circuit_breaker_fires_before_all_items_processed():
+    # Ein halboffener Tunnel würde sonst die komplette Loop durchlaufen, bis
+    # der Job-Timeout in daily_news.yml zuschlägt (siehe Kommentar in
+    # ai_news_curator.py). Der Circuit-Breaker muss VIEL früher abbrechen -
+    # hier: nach 5 konsekutiven Gateway-Fehlern, bei 50 Items im Batch.
+    curator = AINewsCurator(gateway_key="sk-test")
+    _prompt_template_for(curator)
+    auth_error = openai.AuthenticationError(
+        message="Invalid API key", response=MagicMock(status_code=401), body=None
+    )
+    curator.client.chat.completions.create = MagicMock(side_effect=auth_error)
+    items = [_item(title=f"t{i}", url=f"u{i}") for i in range(50)]
+
+    with pytest.raises(RuntimeError, match="in Folge"):
+        curator.analyze_relevance(items, seen_titles=[])
+
+    # Nicht alle 50 Items wurden angefragt - der Breaker griff früh.
+    assert curator.client.chat.completions.create.call_count <= 6
+
+
+def test_circuit_breaker_resets_on_success_between_gateway_errors():
+    # Vereinzelte Gateway-Fehler, unterbrochen von Erfolgen, dürfen NICHT den
+    # Circuit-Breaker auslösen - der reagiert nur auf eine zusammenhängende
+    # Fehler-Serie, nicht auf die Gesamtzahl über den ganzen Lauf.
+    curator = AINewsCurator(gateway_key="sk-test")
+    _prompt_template_for(curator)
+    auth_error = openai.AuthenticationError(
+        message="Invalid API key", response=MagicMock(status_code=401), body=None
+    )
+    ok = _fake_response('{"relevance_score": 5, "category": "llm_release"}')
+    # 4 Gateway-Fehler am Stück (unter der 5er-Schwelle), dann Erfolg, dann
+    # wieder 4 am Stück - macht insgesamt 8/9 Fehler (weit über der
+    # 30%-Schwelle), soll aber trotzdem NICHT über den Circuit-Breaker
+    # abbrechen, weil nie 5 direkt hintereinander auftreten.
+    curator.client.chat.completions.create = MagicMock(
+        side_effect=[auth_error] * 4 + [ok] + [auth_error] * 4
+    )
+    items = [_item(title=f"t{i}", url=f"u{i}") for i in range(9)]
+
+    # Der 30%-Threshold-Guard greift hier stattdessen (8/9 ≈ 89% > 30%) -
+    # dieser Test prüft nur, dass es NICHT der Circuit-Breaker war.
+    with pytest.raises(RuntimeError) as exc_info:
+        curator.analyze_relevance(items, seen_titles=[])
+    assert "in Folge" not in str(exc_info.value)
+    assert "Gateway-Fehlern" in str(exc_info.value)
+
+
+def test_malformed_response_with_empty_choices_counts_as_gateway_error():
+    # HTTP 200, aber strukturell kaputte Response (leeres choices[]) - ein
+    # dokumentierter LiteLLM/Proxy-Fehlermodus. Kein openai.APIError (die
+    # HTTP-Schicht war unauffällig), aber trotzdem ein Gateway-Problem, kein
+    # Content-Problem des Items - muss also genauso wie ein APIError in
+    # gateway_error_count/den Report/die Guards einfliessen, nicht in "error"
+    # verschwinden wo keiner der neuen Schutzmechanismen greift.
+    curator = AINewsCurator(gateway_key="sk-test")
+    _prompt_template_for(curator)
+    empty_choices_response = MagicMock()
+    empty_choices_response.choices = []
+    ok = _fake_response('{"relevance_score": 5, "category": "llm_release"}')
+    curator.client.chat.completions.create = MagicMock(
+        side_effect=[ok, ok, ok, empty_choices_response]
+    )
+    items = [_item(title=f"t{i}", url=f"u{i}") for i in range(4)]
+
+    result = curator.analyze_relevance(items, seen_titles=[])
+
+    failed_item = next(r for r in result if r.url == "u3")
+    assert failed_item.category == "gateway_error"
+
+
+def test_gateway_response_error_is_a_real_exception_type():
+    # Kleiner Sanity-Check, dass GatewayResponseError sich wie eine normale
+    # Exception verhält (wird u.a. via `raise ... from shape_err` genutzt).
+    with pytest.raises(GatewayResponseError):
+        raise GatewayResponseError("test")
 
 
 def test_gateway_error_section_appears_in_report_when_present():

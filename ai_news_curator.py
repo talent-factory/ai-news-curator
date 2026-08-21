@@ -22,6 +22,14 @@ from dotenv import load_dotenv
 load_dotenv(override=True)
 
 
+class GatewayResponseError(Exception):
+    """Markiert eine strukturell kaputte (aber HTTP-200-)Response vom Gateway,
+    z.B. ein leeres `choices`-Array. Kein openai.APIError (der HTTP-Layer war
+    unauffällig), aber trotzdem ein Gateway-/Proxy-Problem und kein Content-
+    Problem eines einzelnen Items - soll in analyze_relevance genauso als
+    Gateway-Fehler zählen wie ein echter openai.APIError."""
+
+
 @dataclass
 class NewsItem:
     title: str
@@ -30,7 +38,8 @@ class NewsItem:
     published: str
     summary: str
     relevance_score: int  # 1-5
-    category: str  # "teaching", "tools", "research", "skip"
+    category: str  # "llm_release", "cli_tools", "teaching", "tools", "research",
+    # "frameworks", "skip", "gateway_error", "error"
     reasoning: str
 
 
@@ -336,7 +345,17 @@ Format:
         success_count = 0
         error_count = 0
         gateway_error_count = 0  # Auth/Tunnel/Alias-Fehler der openai-SDK selbst
+        consecutive_gateway_errors = 0  # für den Circuit-Breaker unten
         logged_error_types = set()  # jede Fehler-Art mind. einmal detailliert loggen
+
+        # Bricht die Loop SOFORT ab, wenn der Gateway offensichtlich down ist -
+        # nicht erst am Ende. Wichtig bei einem halboffenen Tunnel: ein
+        # scheiterndes Item kann bis zu timeout×(max_retries+1) ≈ 180s dauern
+        # (siehe self.client-Konstruktion), der Job-Timeout in daily_news.yml
+        # (20min) würde den Lauf sonst nach ~6-7 Items killen, BEVOR die
+        # Guards am Ende der Methode überhaupt erreicht werden - der Run
+        # zeigt dann nur "cancelled" statt der eigentlichen Diagnose.
+        gateway_circuit_breaker_threshold = 5
 
         # Format seen_titles for the prompt
         seen_titles_text = "\n".join(f"- {title}" for title in seen_titles)
@@ -361,8 +380,18 @@ Format:
                     messages=[{"role": "user", "content": prompt}],
                 )
 
-                # Verbesserte JSON-Extraktion
-                response_text = (response.choices[0].message.content or "").strip()
+                # Verbesserte JSON-Extraktion. Der Response-Shape-Zugriff ist
+                # eigens umschlossen: ein leeres choices[] oder message=None ist
+                # ein Gateway-/Proxy-Problem (HTTP 200, aber strukturell kaputt),
+                # kein Content-Problem des Items - deshalb eigener Fehlertyp statt
+                # eines rohen IndexError/AttributeError, der sonst als "error"
+                # (Content) statt "gateway_error" einsortiert würde.
+                try:
+                    response_text = (response.choices[0].message.content or "").strip()
+                except (IndexError, KeyError, AttributeError) as shape_err:
+                    raise GatewayResponseError(
+                        f"Unerwartete Response-Struktur: {shape_err}"
+                    ) from shape_err
                 analysis = self.extract_json_from_text(response_text)
 
                 if not analysis:
@@ -390,16 +419,26 @@ Format:
                     )
                 )
                 success_count += 1
+                consecutive_gateway_errors = 0  # der Gateway antwortet gerade normal
 
             except Exception as e:
                 error_count += 1
                 # openai.APIError (und Subklassen wie AuthenticationError,
                 # APIConnectionError, NotFoundError) = Gateway/Tunnel/Key/Alias-Problem.
+                # GatewayResponseError = HTTP 200, aber strukturell kaputte Response
+                # (leeres choices[] etc.) - auch ein Gateway-/Proxy-Problem, kein
+                # openai.APIError, aber genauso wenig ein Content-Problem des Items.
                 # Alles andere (ValueError etc.) = Content-/Parsing-Problem eines
                 # einzelnen Items. Beides in einen Topf zu werfen erschwert Diagnose.
-                is_gateway_error = isinstance(e, APIError)
+                is_gateway_error = isinstance(e, (APIError, GatewayResponseError))
                 if is_gateway_error:
                     gateway_error_count += 1
+                    consecutive_gateway_errors += 1
+                else:
+                    # Jede Antwort, ob content-parsebar oder nicht, beweist dass
+                    # der Gateway gerade grundsätzlich erreichbar ist - Streak
+                    # gehört nur zu Gateway-Fehlern, nicht zu Content-Fehlern.
+                    consecutive_gateway_errors = 0
 
                 # Jede Fehler-Art mind. einmal loggen, nicht nur die ersten 3 global -
                 # sonst bleibt ein spät einsetzender Tunnel-Ausfall unbeschrieben, wenn
@@ -412,6 +451,18 @@ Format:
                         f"⚠️  [{kind}] Error analyzing '{item['title'][:50]}...': "
                         f"{error_type}: {e}"
                     )
+
+                # Circuit-Breaker: sofort abbrechen statt weiter durch die Loop zu
+                # laufen, bis der Job-Timeout zuschlägt (siehe Kommentar oben an
+                # gateway_circuit_breaker_threshold). Bewusst VOR dem regulären
+                # Fallback-Append, damit kein irreführender Teil-Report entsteht.
+                if consecutive_gateway_errors >= gateway_circuit_breaker_threshold:
+                    raise RuntimeError(
+                        f"LLM-Gateway: {consecutive_gateway_errors} Gateway-Fehler in "
+                        f"Folge - Abbruch nach {idx}/{len(news_items)} Items. "
+                        f"Vermutlich Gateway/Tunnel down oder GATEWAY_KEY ungültig - "
+                        f"siehe Fehlermeldungen oben."
+                    ) from e
 
                 # Fallback: Füge Item mit niedrigem Score hinzu statt es zu verlieren.
                 # Eigene Kategorie statt "skip" - sonst ist ein Gateway-Ausfall im
@@ -451,8 +502,11 @@ Format:
                             f"{len(news_items)} Items fehlgeschlagen "
                             f"(Auth/Tunnel/Alias?)\n"
                         )
-                except OSError:
-                    pass  # Step-Summary ist ein Nice-to-have, kein Show-Stopper
+                except OSError as summary_err:
+                    # Step-Summary ist ein Nice-to-have, kein Show-Stopper - aber
+                    # komplett lautlos zu scheitern widerspricht der Philosophie
+                    # dieser ganzen Methode ("jeder Fehler wird sichtbar gemacht").
+                    print(f"⚠️  Konnte GITHUB_STEP_SUMMARY nicht schreiben: {summary_err}")
 
         # Fail loudly wenn ALLE Analysen fehlschlugen (z.B. zurückgezogene Model-ID)
         # ODER ein grosser Anteil davon Gateway-Fehler (nicht Content-Fehler!) sind -

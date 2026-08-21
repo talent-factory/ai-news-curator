@@ -1,4 +1,7 @@
 # AI News Curator - Python Dependencies
+# Für lokale pip-Installation (siehe CONTRIBUTING.md/QUICK_START.md). Die CI
+# (.github/workflows/*.yml) nutzt stattdessen uv + pyproject.toml/uv.lock als
+# Single Source of Truth - diese Datei manuell im Gleichschritt halten.
 
 # LLM-Gateway (LiteLLM, OpenAI-kompatibler Endpoint)
 openai>=1.0.0
@@ -6,11 +9,11 @@ openai>=1.0.0
 # News Feed Parsing
 feedparser>=6.0.10
 
+# Datums-Handling (von feedparser-Verarbeitung genutzt)
+python-dateutil>=2.9.0
+
 # HTTP Requests
 requests>=2.31.0
-
-# Configuration
-pyyaml>=6.0.1
 
 # Environment Variables (.env support)
 python-dotenv>=1.0.0

@@ -19,7 +19,7 @@ dein-projekt/
 Der Workflow (`.github/workflows/daily_news.yml`) ist bereits im Repo eingecheckt — kein
 manuelles Platzieren nötig. Er läuft gegen den zentralen **TF LLM-Gateway** (LiteLLM,
 `talent-factory/llm-gateway`), nicht mehr direkt gegen die Anthropic-API. Provider-Keys
-liegen ausschließlich am Gateway; dieses Repo braucht nur einen projekt-scoped Virtual Key.
+liegen ausschliesslich am Gateway; dieses Repo braucht nur einen projekt-scoped Virtual Key.
 
 ## Secrets als GitHub Actions Secrets hinzufügen
 
