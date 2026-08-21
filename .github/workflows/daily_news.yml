@@ -45,10 +45,15 @@ jobs:
         run: |
           # Das Gateway ist privat (Fly 6PN/IPv6) und vom öffentlichen GH-Runner
           # nur über einen fly-proxy-Tunnel erreichbar.
+          # `flyctl`, nicht `fly`: das Release-Tarball von superfly/flyctl-actions
+          # enthält nur eine Binary namens `flyctl` (verifiziert: das offizielle
+          # fly.io/install.sh legt zusätzlich einen `fly`-Symlink an, die GH Action
+          # tut das NICHT) - `fly proxy ...` schlägt daher mit "command not found"
+          # fehl, obwohl "Setup flyctl" grün ist und flyctl korrekt im PATH liegt.
           # stdout/stderr in eine Datei statt in die Step-Pipe, sonst kann der
           # Hintergrundprozess das Step-Teardown blockieren; bei Fehlschlag wird
           # die Datei unten ausgegeben, damit der WireGuard-Fehler sichtbar bleibt.
-          fly proxy 4000:4000 -a tf-llm-gateway > fly-proxy.log 2>&1 &
+          flyctl proxy 4000:4000 -a tf-llm-gateway > fly-proxy.log 2>&1 &
           # Warten bis der Tunnel steht (LiteLLM /health/liveliness, ohne Auth).
           # 60s statt 30s: WireGuard-Peer-Aufbau auf einem frischen Runner kann
           # knapp über der alten Grenze liegen.
