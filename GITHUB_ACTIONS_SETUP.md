@@ -16,82 +16,80 @@ dein-projekt/
 
 ## Korrekte Installation
 
-```bash
-# 1. Verzeichnis-Struktur erstellen
-mkdir -p .github/workflows
+Der Workflow (`.github/workflows/daily_news.yml`) ist bereits im Repo eingecheckt — kein
+manuelles Platzieren nötig. Er läuft gegen den zentralen **TF LLM-Gateway** (LiteLLM,
+`talent-factory/llm-gateway`), nicht mehr direkt gegen die Anthropic-API. Provider-Keys
+liegen ausschließlich am Gateway; dieses Repo braucht nur einen projekt-scoped Virtual Key.
 
-# 2. Workflow-Datei platzieren
-cp daily_news_simple.yml .github/workflows/daily_news.yml
+## Secrets als GitHub Actions Secrets hinzufügen
 
-# Alternative: Fortgeschrittene Version mit Issue-Erstellung
-# cp daily_news.yml .github/workflows/daily_news.yml
+**Wichtig:** Der Workflow braucht zwei Secrets, um durch den privaten Gateway-Tunnel zu kommen:
 
-# 3. Zu Git hinzufügen
-git add .github/workflows/daily_news.yml
-git commit -m "Add daily news digest workflow"
-git push
-```
-
-## Welche Version soll ich nutzen?
-
-### Option 1: daily_news_simple.yml (Empfohlen für Start)
-
-- Einfacher
-- Erstellt nur Reports
-- Weniger Berechtigungen nötig
-
-**Nutze diese Version wenn:**
-- Du gerade startest
-- Du Reports nur per Commit haben willst
-- Du Probleme mit Berechtigungen vermeiden willst
-
-### Option 2: daily_news.yml (Fortgeschritten)
-
-- Erstellt Reports
-- Erstellt GitHub Issues bei High-Priority News
-- Automatische Benachrichtigungen
-
-**Nutze diese Version wenn:**
-- Du automatische Notifications willst
-- Du GitHub Issues als To-Do nutzt
-- Du den Workflow gut verstehst
-
-## API Key als Secret hinzufügen
-
-**Wichtig:** GitHub Actions braucht deinen Anthropic API Key!
+| Secret | Zweck |
+|---|---|
+| `NEWS_CURATOR_GATEWAY_KEY` | Virtual Key am Gateway, least privilege auf `news-curator/classify` |
+| `FLY_API_TOKEN` | App-scoped Fly-Token, öffnet den `fly proxy`-Tunnel zum privaten Gateway (der GH-Runner ist öffentlich, das Gateway hat keine öffentliche IP) |
 
 ### Schritt für Schritt
 
-1. Gehe zu deinem GitHub Repository
+1. **Virtual Key am Gateway provisionieren** (im `llm-gateway`-Repo, mit dem Prod-Master-Key):
+   ```bash
+   LITELLM_MASTER_KEY=<prod-master-key> \
+   KEY_ALIAS=news-curator \
+   KEY_MODELS='["news-curator/classify"]' \
+   KEY_MAX_BUDGET=10 \
+   just provision
+   ```
+   → liefert `"key": "sk-..."`. Achtung: LiteLLM speichert nur den Hash — der Klartext-Key
+   ist danach nicht mehr abrufbar. Alias muss eindeutig sein; existiert er schon, vorher via
+   `POST /key/delete` mit `{"key_aliases": ["news-curator"]}` löschen.
+
+2. **Fly-Token erzeugen** (app-scoped auf `tf-llm-gateway`, least privilege):
+   ```bash
+   fly tokens create deploy -a tf-llm-gateway -n "ai-news-curator-ci" -x 8760h
+   ```
+
+3. Gehe zu deinem GitHub Repository
    - URL: `https://github.com/talent-factory/ai-news-curator`
 
-2. Settings Tab öffnen
+4. Settings Tab öffnen
    - Oben rechts auf "Settings" klicken
 
-3. Secrets and variables
+5. Secrets and variables
    - Linke Sidebar: "Secrets and variables" → "Actions"
 
-4. New repository secret
-   - Button: "New repository secret" klicken
-   - Name: `ANTHROPIC_API_KEY`
-   - Secret: Dein Claude API Key (z.B. `sk-ant-api03-...`)
+6. New repository secret
+   - Button: "New repository secret" klicken, je einmal für:
+     - Name: `NEWS_CURATOR_GATEWAY_KEY`, Secret: der Virtual Key aus Schritt 1
+     - Name: `FLY_API_TOKEN`, Secret: der Token aus Schritt 2
    - "Add secret" klicken
 
-Das war's! Der Workflow kann jetzt auf den Key zugreifen.
+Oder per CLI (Wert wird interaktiv abgefragt, landet nie im Terminal-Log):
+```bash
+gh secret set NEWS_CURATOR_GATEWAY_KEY --repo talent-factory/ai-news-curator
+gh secret set FLY_API_TOKEN --repo talent-factory/ai-news-curator
+```
+
+Das war's! Der Workflow kann jetzt durch den Tunnel auf den Gateway-Alias zugreifen.
+
+> Historie: Bis zur Gateway-Migration lief dieses Repo mit einem eigenen `ANTHROPIC_API_KEY`-
+> Secret direkt gegen die Anthropic-API. Das Secret ist inzwischen ungenutzt und sollte
+> entfernt werden (Settings → Secrets and variables → Actions → `ANTHROPIC_API_KEY` → Remove).
 
 ## Testen ob es funktioniert
 
 ### Manueller Test
 
 1. Gehe zu: Actions Tab in deinem Repository
-2. Klicke auf: "Daily AI News Digest" (oder "Daily AI News Digest (Simple)")
+2. Klicke auf: "Weekly AI News Digest"
 3. Rechts oben: "Run workflow" → "Run workflow"
 4. Warte ca. 2-3 Minuten
-5. Überprüfe ob neuer Commit mit Report da ist
+5. Überprüfe ob ein neues GitHub Issue mit dem Report erstellt wurde
 
 ### Automatischer Test
 
-Warte bis 08:00 Uhr morgen (CET) - dann sollte automatisch ein neuer Report committed werden!
+Läuft **wöchentlich Montag 05:00 UTC** (06:00 CET / 07:00 CEST je nach Sommerzeit) — siehe
+`cron: '0 5 * * 1'` in `.github/workflows/daily_news.yml`.
 
 ## Troubleshooting
 
@@ -111,23 +109,31 @@ mkdir -p .github/workflows
 mv daily_news.yml .github/workflows/
 ```
 
-### "Error: ANTHROPIC_API_KEY not set"
+### "GATEWAY_KEY environment variable nicht gesetzt!"
 
-**Problem:** Secret nicht korrekt hinzugefügt
+**Problem:** Secret `NEWS_CURATOR_GATEWAY_KEY` fehlt oder ist leer
 
 **Lösung:**
 
 1. Settings → Secrets and variables → Actions
-2. Überprüfe: Secret heisst **exakt** `ANTHROPIC_API_KEY`
-3. Falls nicht: Lösche und neu erstellen
+2. Überprüfe: Secret heisst **exakt** `NEWS_CURATOR_GATEWAY_KEY`
+3. Falls nicht/falsch: neuen Virtual Key am Gateway provisionieren (siehe oben) und Secret neu setzen
 
-### "Permission denied" beim Push
+### "✗ Gateway-Tunnel kam nicht hoch" (Step "Open tunnel to private LLM-Gateway")
+
+**Problem:** `FLY_API_TOKEN` fehlt, ist abgelaufen, oder hat nicht genug Rechte für `tf-llm-gateway`
+
+**Lösung:**
+
+1. Neuen app-scoped Token erzeugen: `fly tokens create deploy -a tf-llm-gateway -n "ai-news-curator-ci" -x 8760h`
+2. Secret `FLY_API_TOKEN` im Repo neu setzen
+3. Prüfen, dass `tf-llm-gateway` selbst erreichbar ist (`just health` im `llm-gateway`-Repo)
+
+### "Permission denied" beim Erstellen des Issues
 
 **Problem:** Workflow hat keine Write-Rechte
 
-**Lösung 1 (einfach):** Nutze `daily_news_simple.yml`
-
-**Lösung 2 (fortgeschritten):**
+**Lösung:**
 
 1. Settings → Actions → General
 2. Scroll zu "Workflow permissions"
@@ -135,34 +141,35 @@ mv daily_news.yml .github/workflows/
 4. "Allow GitHub Actions to create and approve pull requests"
 5. Save
 
-### Workflow läuft, aber keine Reports
+### Workflow läuft, aber kein Issue/Report
 
-**Problem:** Script schlägt fehl
+**Problem:** Script schlägt fehl (Tunnel steht, aber der eigentliche Curator-Lauf scheitert)
 
 **Lösung:**
 
 1. Actions Tab → Letzte Workflow-Run anklicken
 2. "Run AI News Curator" Step anklicken
-3. Logs lesen - dort steht der Fehler
-4. Häufig: API Key falsch oder Rate Limit
+3. Logs lesen — Fehlermeldung nennt explizit die Ursache (Tunnel/`GATEWAY_URL`, ungültiger `GATEWAY_KEY`, unbekannter Modell-Alias, o.ä.)
+4. Häufig: `NEWS_CURATOR_GATEWAY_KEY` falsch/gelöscht, oder Alias `news-curator/classify` existiert nicht (mehr) am Gateway (`config.yaml` im `llm-gateway`-Repo prüfen)
 
 ## Was passiert beim automatischen Run?
 
 ```
-07:00 UTC (08:00 CET):
+Montag 05:00 UTC (06:00 CET / 07:00 CEST):
   └─ Workflow startet
      ├─ Repository auschecken
      ├─ Python installieren
      ├─ Dependencies installieren
+     ├─ flyctl installieren + Tunnel zum privaten LLM-Gateway öffnen
+     │  └─ fly proxy 4000:4000 -a tf-llm-gateway (via FLY_API_TOKEN)
      ├─ ai_news_curator.py ausführen
      │  ├─ News von HN, Reddit, GitHub sammeln
-     │  ├─ Claude API für Relevanz-Analyse
+     │  ├─ TF LLM-Gateway (Alias news-curator/classify) für Relevanz-Analyse
      │  └─ Report generieren
-     ├─ Report zu Git committen
-     └─ [Optional] GitHub Issue erstellen
+     └─ GitHub Issue mit dem Report erstellen (+ sperren gegen Spam-Kommentare)
 ```
 
-**Ergebnis:** Neuer Report in deinem Repo!
+**Ergebnis:** Neues GitHub Issue mit dem News-Digest in deinem Repo!
 
 ## Pro-Tipps
 
