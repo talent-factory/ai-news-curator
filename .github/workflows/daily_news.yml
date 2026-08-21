@@ -99,12 +99,21 @@ jobs:
             if (fs.existsSync(filename)) {
               const content = fs.readFileSync(filename, 'utf8');
 
-              // Determine priority based on content
-              const hasHighPriority = content.includes('## 🔥 Sofort relevant');
+              // ai_news_curator.py hängt einen <!-- digest-meta: ... --> Kommentar
+              // mit echten Zahlen an. Wichtig: NICHT auf die '## 🔥 Sofort relevant'
+              // Überschrift matchen - die steht immer im Report (auch wenn die
+              // Liste leer ist, dann nur mit Platzhaltertext darunter), ein
+              // content.includes() darauf wäre also immer true.
+              const meta = content.match(
+                /<!-- digest-meta: high_priority=(\d+) medium_priority=(\d+) gateway_errors=(\d+) -->/
+              );
+              const highPriorityCount = meta ? parseInt(meta[1], 10) : 0;
+              const gatewayErrorCount = meta ? parseInt(meta[3], 10) : 0;
+              const hasHighPriority = highPriorityCount > 0;
               // Unterhalb des Guard-Schwellwerts (30%) in ai_news_curator.py kann
               // ein Lauf noch mit Gateway-Fehlern durchlaufen - das soll im Issue
               // sofort sichtbar sein, nicht nur in der Kategorien-Statistik vergraben.
-              const isDegraded = content.includes('## ⚠️ Gateway-Fehler');
+              const isDegraded = gatewayErrorCount > 0;
               const labels = hasHighPriority ? ['ai-news', 'high-priority'] : ['ai-news'];
               if (isDegraded) {
                 labels.push('gateway-degraded');

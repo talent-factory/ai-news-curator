@@ -29,7 +29,7 @@ from unittest.mock import MagicMock, patch
 import openai
 import pytest
 
-from ai_news_curator import AINewsCurator, main
+from ai_news_curator import AINewsCurator, NewsItem, main
 
 
 def _prompt_template_for(curator: AINewsCurator) -> None:
@@ -307,6 +307,47 @@ def test_no_gateway_error_section_when_all_succeed():
     report = curator.generate_report(analyzed)
 
     assert "## ⚠️ Gateway-Fehler" not in report
+
+
+# --- Maschinenlesbare Report-Metadaten (für die Issue-Erstellung in daily_news.yml) ---
+
+
+def test_report_meta_reflects_actual_high_priority_count():
+    # Regression: die '## 🔥 Sofort relevant'-Überschrift steht IMMER im
+    # Report (auch bei leerer Liste, nur mit Platzhaltertext darunter) - der
+    # Workflow darf also nicht auf diese Überschrift matchen, sondern muss
+    # den digest-meta-Kommentar mit der echten Zahl auswerten.
+    curator = AINewsCurator(gateway_key="sk-test")
+    items = [
+        NewsItem(title="hi", url="u1", source="s", published="p", summary="x",
+                  relevance_score=5, category="llm_release", reasoning="r"),
+        NewsItem(title="lo", url="u2", source="s", published="p", summary="x",
+                  relevance_score=2, category="skip", reasoning="r"),
+    ]
+
+    report = curator.generate_report(items)
+
+    assert "<!-- digest-meta: high_priority=1 medium_priority=0 gateway_errors=0 -->" in report
+    # Die Überschrift selbst steht trotzdem immer im Report (menschenlesbar) -
+    # genau deshalb darf der Workflow NICHT nur darauf matchen.
+    assert "## 🔥 Sofort relevant" in report
+
+
+def test_report_meta_reports_zero_high_priority_when_none():
+    curator = AINewsCurator(gateway_key="sk-test")
+    items = [
+        NewsItem(title="lo", url="u1", source="s", published="p", summary="x",
+                  relevance_score=2, category="skip", reasoning="r"),
+    ]
+
+    report = curator.generate_report(items)
+
+    assert "<!-- digest-meta: high_priority=0 medium_priority=0 gateway_errors=0 -->" in report
+    # Die Überschrift ist trotzdem da (mit Platzhaltertext) - der Bug, den
+    # dieser Test verhindert, ist genau dass ein naives content.includes()
+    # auf diese Überschrift fälschlich "hat hochpriorität" liefern würde.
+    assert "## 🔥 Sofort relevant" in report
+    assert "_Keine hochprioritäre Updates heute._" in report
 
 
 # --- main(): Env-Var-Wiring, fail-loud statt silent exit 0 ---

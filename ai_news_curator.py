@@ -577,6 +577,20 @@ _Diese Items konnten NICHT bewertet werden (Gateway/Tunnel/Key-Problem, nicht Co
 
         report += "\n_Generiert via TF LLM-Gateway (Claude) | Talent Factory GmbH_\n"
 
+        # Maschinenlesbare Metadaten für den Issue-Erstellungs-Schritt in
+        # daily_news.yml. Vorher wurde dort per Text-Match auf die Überschrift
+        # '## 🔥 Sofort relevant' geprüft - die stand aber IMMER im Report,
+        # unabhängig davon ob high_priority tatsächlich Items enthielt (bei
+        # leerer Liste kam nur der Platzhaltertext '_Keine hochprioritäre
+        # Updates heute._' darunter). Die 'hasHighPriority'-Logik im Workflow
+        # war dadurch wirkungslos. Ein HTML-Kommentar mit echten Zahlen ist
+        # robust gegen Text-/Emoji-Änderungen im sichtbaren Report.
+        report += (
+            f"\n<!-- digest-meta: high_priority={len(high_priority)} "
+            f"medium_priority={len(medium_priority)} "
+            f"gateway_errors={len(gateway_error_items)} -->\n"
+        )
+
         return report
 
     def run(self, hours_back: int = 24) -> str:
