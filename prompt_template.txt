@@ -9,7 +9,7 @@ KONTEXT:
 
 TECH-STACK & TOOLS:
 Programmiersprachen:
-- Python, Java, TypeScript/React
+- Rust, Python, Java, TypeScript/React
 
 Large Language Models (LLMs):
 - Claude (Anthropic): Sonnet, Opus, Haiku
